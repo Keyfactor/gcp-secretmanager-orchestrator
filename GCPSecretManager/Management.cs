@@ -5,6 +5,10 @@ using Keyfactor.Orchestrators.Extensions;
 using Keyfactor.Orchestrators.Common.Enums;
 
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using Grpc.Net.Client.Balancer;
+using Keyfactor.Orchestrators.Extensions.Interfaces;
+using Keyfactor.Extensions.Orchestrator.GCPSecretManager;
 
 namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
 {
@@ -12,10 +16,26 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
     {
         public string ExtensionName => "Keyfactor.Extensions.Orchestrator.GCPSecretManager.Management";
 
+        IPAMSecretResolver _resolver;
+
+        public Management(IPAMSecretResolver resolver)
+        {
+            _resolver = resolver;
+        }
+
         public JobResult ProcessJob(ManagementJobConfiguration config)
         {
             ILogger logger = LogHandler.GetClassLogger(this.GetType());
-            logger.LogDebug($"Begin Management...");
+            logger.LogDebug($"Begin {config.Capability} for job id {config.JobId}...");
+            logger.LogDebug($"Server: {config.CertificateStoreDetails.ClientMachine}");
+            logger.LogDebug($"Store Path: {config.CertificateStoreDetails.StorePath}");
+            logger.LogDebug($"Job Properties:");
+            foreach (KeyValuePair<string, object> keyValue in config.JobProperties ?? new Dictionary<string, object>())
+            {
+                logger.LogDebug($"    {keyValue.Key}: {keyValue.Value}");
+            }
+
+            string storePassword = PAMUtilities.ResolvePAMField(_resolver, logger, "Store Password", config.CertificateStoreDetails.StorePassword);
 
             try
             {
