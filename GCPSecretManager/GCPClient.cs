@@ -1,20 +1,102 @@
 ﻿using Google.Api.Gax.ResourceNames;
 using Google.Cloud.SecretManager.V1;
+
+using Microsoft.Extensions.Logging;
+
+using Keyfactor.Logging;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
     internal class GCPClient
     {
-        public void AddSecret(string alias)
+        ILogger _logger;
+        string ProjectId { get; set; }
+        SecretManagerServiceClient Client { get; set; }
+
+        public GCPClient(string projectId)
         {
+            _logger = LogHandler.GetClassLogger(this.GetType());
+            ProjectId = projectId;
+            Client = SecretManagerServiceClient.Create();
+        }
+
+        public List<string> GetCertificateNames()
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            List<string> rtnSecrets = new List<string>();
+
+            ListSecretsRequest request = new ListSecretsRequest();
+            request.PageSize = 50;
+            request.ParentAsProjectName = ProjectName.FromProject(ProjectId);
+
+            ListSecretsResponse response;
+
             try
             {
-                SecretManagerServiceClient client = SecretManagerServiceClient.Create();
+                do
+                {
+                    response = Client.ListSecrets(request).AsRawResponses().FirstOrDefault();
+                    if (response == null)
+                        break;
+                    else
+                    {
+                        foreach (var item in response.Secrets)
+                        {
+                            rtnSecrets.Add(item.Name);
+                        }
+                    }
+
+                    request.PageToken = response.NextPageToken;
+                } while (!string.IsNullOrEmpty(response.NextPageToken));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error retrieving certificates: "));
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return rtnSecrets;
+        }
+
+        public string GetCertificateEntry(string name)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            string rtnValue;
+            
+            try
+            {
+                AccessSecretVersionResponse version = Client.AccessSecretVersion(new AccessSecretVersionRequest() { Name = name + "/versions/latest" });
+                rtnValue = version.Payload.Data.ToStringUtf8();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error retrieving certificate {name}: "));
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return rtnValue;
+        }
+
+        public void AddSecret(string alias)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            try
+            {
                 AccessSecretVersionRequest request = new AccessSecretVersionRequest();
                 SecretName secretName = new SecretName(ProjectId, alias);
 
@@ -37,54 +119,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 string i = ex.Message;
             }
-        }
-
-        public void GetSecret(string alias)
-        {
-            SecretManagerServiceClient client = SecretManagerServiceClient.Create();
-
-            ListSecretVersionsRequest request = new ListSecretVersionsRequest();
-            SecretName secretName = new SecretName(ProjectId, alias);
-            request.ParentAsSecretName = secretName;
-
-            var response = client.ListSecretVersions(request);
-            foreach (var item in response)
-            {
-
-            }
-            AccessSecretVersionRequest request2 = new AccessSecretVersionRequest();
-            SecretVersionName secretVersionName = new SecretVersionName(ProjectId, alias, "latest");
-            request2.SecretVersionName = secretVersionName;
-            AccessSecretVersionResponse version = client.AccessSecretVersion(request2);
-
-        }
-
-        public void GetSecrets()
-        {
-            SecretManagerServiceClient client = SecretManagerServiceClient.Create();
-
-            ListSecretsRequest request = new ListSecretsRequest();
-            request.PageSize = 1;
-            request.ParentAsProjectName = ProjectName.FromProject(ProjectId);
-
-            ListSecretsResponse? response;
-
-            do
-            {
-                response = client.ListSecrets(request).AsRawResponses().FirstOrDefault();
-                if (response == null)
-                    break;
-                else
-                {
-                    foreach (var item in response.Secrets)
-                    {
-                        string x = item.Name;
-                    }
-                }
-
-                request.PageToken = response.NextPageToken;
-            } while (!string.IsNullOrEmpty(response.NextPageToken));
-
         }
     }
 }

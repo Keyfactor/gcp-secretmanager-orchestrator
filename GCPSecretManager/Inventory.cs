@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 
 using Keyfactor.Logging;
+using Keyfactor.Orchestrators.Common.Enums;
 using Keyfactor.Orchestrators.Extensions;
 using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -9,50 +10,56 @@ using Newtonsoft.Json;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
-    public class Inventory : IInventoryJobExtension
+    public class Inventory : JobBase, IInventoryJobExtension
     {
         public string ExtensionName => "Keyfactor.Extensions.Orchestrator.GCPSecretManager.Inventory";
 
-        IPAMSecretResolver _resolver;
-
         public Inventory(IPAMSecretResolver resolver)
         {
-            _resolver = resolver;
+            Resolver = resolver;
         }
 
         //Job Entry Point
         public JobResult ProcessJob(InventoryJobConfiguration config, SubmitInventoryUpdate submitInventory)
         {
-            ILogger logger = LogHandler.GetClassLogger(this.GetType());
-            logger.LogDebug($"Begin {config.Capability} for job id {config.JobId}...");
-            logger.LogDebug($"Server: {config.CertificateStoreDetails.ClientMachine}");
-            logger.LogDebug($"Store Path: {config.CertificateStoreDetails.StorePath}");
-            logger.LogDebug($"Job Properties:");
+            Logger = LogHandler.GetClassLogger(this.GetType());
+            Logger.LogDebug($"Begin {config.Capability} for job id {config.JobId}...");
+            Logger.LogDebug($"Server: {config.CertificateStoreDetails.ClientMachine}");
+            Logger.LogDebug($"Store Path: {config.CertificateStoreDetails.StorePath}");
+            Logger.LogDebug($"Job Properties:");
             foreach (KeyValuePair<string, object> keyValue in config.JobProperties ?? new Dictionary<string, object>())
             {
-                logger.LogDebug($"    {keyValue.Key}: {keyValue.Value}");
+                Logger.LogDebug($"    {keyValue.Key}: {keyValue.Value}");
             }
-
-            string storePassword = PAMUtilities.ResolvePAMField(_resolver, logger, "Store Password", config.CertificateStoreDetails.StorePassword);
-
-            dynamic properties = JsonConvert.DeserializeObject(config.CertificateStoreDetails.Properties.ToString());
-            string projectId = properties.ProjectId?.Value;
-            if (string.IsNullOrEmpty(projectId))
-            {
-                string errMessage = "ProjectId missing or empty.  Please provide a valid ProjectId in the certificate store definition.";
-                logger.LogError(errMessage);
-            }
-
 
             List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
 
             try
             {
-                GCPClient client = new GCPClient
+                Initialize(config.CertificateStoreDetails);
+
+                GCPClient client = new GCPClient(ProjectId);
+                List<string> certificateNames = client.GetCertificateNames();
+                foreach(string certificateName in certificateNames)
+                {
+                    string certificateEntry = client.GetCertificateEntry(certificateName);
+                    if (!CertificateFormatter.IsValid(certificateEntry))
+                        continue;
+                    string[] certificateChain = CertificateFormatter.FormatCertificates(certificateEntry);
+
+                    inventoryItems.Add(new CurrentInventoryItem()
+                    {
+                        ItemStatus = OrchestratorInventoryItemStatus.Unknown,
+                        Alias = certificateName.Substring(certificateName.LastIndexOf("/") + 1),
+                        PrivateKeyEntry = CertificateFormatter.HasPrivateKey(certificateEntry),
+                        UseChainLevel = certificateChain.Length > 1,
+                        Certificates = certificateChain
+                    });
+                }
             }
             catch (Exception ex)
             {
-                return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure, JobHistoryId = config.JobHistoryId, FailureMessage = "Custom message you want to show to show up as the error message in Job History in KF Command" };
+                return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure, JobHistoryId = config.JobHistoryId, FailureMessage = GCPException.FlattenExceptionMessages(ex, $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}:") };
             }
 
             try

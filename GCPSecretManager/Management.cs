@@ -12,7 +12,7 @@ using Keyfactor.Extensions.Orchestrator.GCPSecretManager;
 
 namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
 {
-    public class Management : IManagementJobExtension
+    public class Management : JobBase, IManagementJobExtension
     {
         public string ExtensionName => "Keyfactor.Extensions.Orchestrator.GCPSecretManager.Management";
 
@@ -25,20 +25,20 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
 
         public JobResult ProcessJob(ManagementJobConfiguration config)
         {
-            ILogger logger = LogHandler.GetClassLogger(this.GetType());
-            logger.LogDebug($"Begin {config.Capability} for job id {config.JobId}...");
-            logger.LogDebug($"Server: {config.CertificateStoreDetails.ClientMachine}");
-            logger.LogDebug($"Store Path: {config.CertificateStoreDetails.StorePath}");
-            logger.LogDebug($"Job Properties:");
+            Logger = LogHandler.GetClassLogger(this.GetType());
+            Logger.LogDebug($"Begin {config.Capability} for job id {config.JobId}...");
+            Logger.LogDebug($"Server: {config.CertificateStoreDetails.ClientMachine}");
+            Logger.LogDebug($"Store Path: {config.CertificateStoreDetails.StorePath}");
+            Logger.LogDebug($"Job Properties:");
             foreach (KeyValuePair<string, object> keyValue in config.JobProperties ?? new Dictionary<string, object>())
             {
-                logger.LogDebug($"    {keyValue.Key}: {keyValue.Value}");
+                Logger.LogDebug($"    {keyValue.Key}: {keyValue.Value}");
             }
-
-            string storePassword = PAMUtilities.ResolvePAMField(_resolver, logger, "Store Password", config.CertificateStoreDetails.StorePassword);
 
             try
             {
+                Initialize(config.CertificateStoreDetails);
+
                 switch (config.OperationType)
                 {
                     case CertStoreOperationType.Add:
