@@ -24,10 +24,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             Client = SecretManagerServiceClient.Create();
         }
 
-        public List<string> GetCertificateNames()
+        public List<string> GetSecretNames()
         {
             _logger.MethodEntry(LogLevel.Debug);
-
+            Client
             List<string> rtnSecrets = new List<string>();
 
             ListSecretsRequest request = new ListSecretsRequest();
@@ -80,7 +80,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
             catch (Exception ex)
             {
-                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error retrieving certificate {name}: "));
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, $"Error retrieving certificate {name}: "));
                 throw;
             }
             finally
@@ -119,6 +119,57 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 string i = ex.Message;
             }
+        }
+
+        public void DeleteCertificate(string name)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            DeleteSecretRequest request = new DeleteSecretRequest()
+            {
+                SecretName = new SecretName(ProjectId, name)
+            };
+
+            try
+            {
+                Client.DeleteSecret(request);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, $"Error deleting certificate {name}: "));
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+        }
+
+        public bool Exists(string name)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            bool rtnValue = true;
+
+            GetSecretRequest request = new GetSecretRequest()
+            {
+                SecretName = new SecretName(ProjectId, name)
+            };
+
+            try
+            {
+                Client.GetSecret(request);
+            }
+            catch (Grpc.Core.RpcException ex) when (ex.StatusCode == Grpc.Core.StatusCode.NotFound)
+            {
+                rtnValue = false;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return rtnValue;
         }
     }
 }

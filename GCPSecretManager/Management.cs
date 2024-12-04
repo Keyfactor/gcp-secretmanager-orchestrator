@@ -39,13 +39,15 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
             {
                 Initialize(config.CertificateStoreDetails);
 
+                GCPClient client = new GCPClient(ProjectId);
+
                 switch (config.OperationType)
                 {
                     case CertStoreOperationType.Add:
+                        PerformAdd(config, client);
                         break;
                     case CertStoreOperationType.Remove:
-                        break;
-                    case CertStoreOperationType.Create:
+                        client.DeleteCertificate(config.JobCertificate.Alias);
                         break;
                     default:
                         return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure, JobHistoryId = config.JobHistoryId, FailureMessage = $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Unsupported operation: {config.OperationType.ToString()}" };
@@ -57,6 +59,22 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
             }
 
             return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
+        }
+
+        private void PerformAdd(ManagementJobConfiguration config, GCPClient client)
+        {
+            bool entryExists = client.Exists(config.JobCertificate.Alias);
+            string newPassword = string.Empty;
+
+            if (!config.Overwrite && entryExists)
+                throw new GCPException($"Secret {config.JobCertificate.Alias} already exists but Overwrite set to False.  Set Overwrite to True to replace the certificate.");
+
+            if (string.IsNullOrEmpty(StorePassword))
+                newPassword = config.JobCertificate.PrivateKeyPassword;
+            else
+                newPassword = StorePassword;
+
+            string secret = CertificateFormatter.FormatCertificateEntry(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
         }
     }
 }

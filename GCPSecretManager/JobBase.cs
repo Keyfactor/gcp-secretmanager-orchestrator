@@ -14,6 +14,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         internal string StorePassword { get; set; }
         internal string ProjectId { get; set; }
         internal string PasswordSecretSuffix { get; set; }
+        internal bool IncludeChain { get; set; }
 
         internal void Initialize(CertificateStore certificateStoreDetails)
         {
@@ -21,14 +22,21 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
             StorePassword = PAMUtilities.ResolvePAMField(Resolver, Logger, "Store Password", certificateStoreDetails.StorePassword);
 
+            string errMessage = string.Empty;
             dynamic properties = JsonConvert.DeserializeObject(certificateStoreDetails.Properties.ToString());
-            ProjectId = properties.ProjectId?.Value;
-            if (string.IsNullOrEmpty(ProjectId))
+
+            if (properties.ProjectId == null || string.IsNullOrEmpty(properties.ProjectId.Value))
             {
-                string errMessage = "ProjectId missing or empty.  Please provide a valid ProjectId in the certificate store definition.";
+                errMessage = "ProjectId missing or empty.  Please provide a valid ProjectId in the certificate store definition.";
                 Logger.LogError(errMessage);
                 throw new GCPException(errMessage);
             }
+            ProjectId = properties.ProjectId.Value;
+
+            if (properties.PasswordSecretSuffix != null)
+                PasswordSecretSuffix = properties.PasswordSecretSuffix.Value;
+
+            IncludeChain = properties.IncludeChain == null || string.IsNullOrEmpty(properties.IncludeChain.Value) ? true : bool.Parse(properties.IncludeChain.Value);
 
             CertificateFormatter = GetCertificateFormatter();
         }

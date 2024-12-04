@@ -34,15 +34,27 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
             List<CurrentInventoryItem> inventoryItems = new List<CurrentInventoryItem>();
 
+            bool hasWarnings = false;
+
             try
             {
                 Initialize(config.CertificateStoreDetails);
 
                 GCPClient client = new GCPClient(ProjectId);
-                List<string> certificateNames = client.GetCertificateNames();
-                foreach(string certificateName in certificateNames)
+                List<string> secretNames = client.GetSecretNames();
+                foreach(string secretName in secretNames)
                 {
-                    string certificateEntry = client.GetCertificateEntry(certificateName);
+                    string certificateEntry = string.Empty;
+                    try
+                    {
+                        certificateEntry = client.GetCertificateEntry(secretName);
+                    }
+                    catch (Exception)
+                    {
+                        hasWarnings = true;
+                        continue;
+                    }
+
                     if (!CertificateFormatter.IsValid(certificateEntry))
                         continue;
                     string[] certificateChain = CertificateFormatter.FormatCertificates(certificateEntry);
@@ -50,7 +62,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     inventoryItems.Add(new CurrentInventoryItem()
                     {
                         ItemStatus = OrchestratorInventoryItemStatus.Unknown,
-                        Alias = certificateName.Substring(certificateName.LastIndexOf("/") + 1),
+                        Alias = secretName.Substring(secretName.LastIndexOf("/") + 1),
                         PrivateKeyEntry = CertificateFormatter.HasPrivateKey(certificateEntry),
                         UseChainLevel = certificateChain.Length > 1,
                         Certificates = certificateChain
@@ -65,7 +77,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             try
             {
                 submitInventory.Invoke(inventoryItems);
-                return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
+
+                if (hasWarnings)
+                    return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Inventory completed successfully, but one or more secrets were not able to be retrieved.  The secrets that had issues may or may not be valid certificates.  Please check the orchestrator log for more details.") };
+                else
+                    return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
             }
             catch (Exception ex)
             {

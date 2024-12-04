@@ -13,6 +13,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
         bool IsValid(string entry);
 
-        string[] FormatCertificates(string entry);
+        string FormatCertificateEntry(string certificateContents, string privateKeyPassword, bool includeChain, string newPassword);
     }
 }
