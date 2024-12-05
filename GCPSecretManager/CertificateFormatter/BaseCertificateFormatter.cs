@@ -17,6 +17,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
         public abstract bool IsValid(string entry);
 
-        public abstract string FormatCertificateEntry(string certificateContents, string privateKeyPassword, bool includeChain, string newPassword);
+        public abstract string[] ConvertSecretToCertificateChain(string entry);
+
+        public abstract string ConvertCertificateEntryToSecret(string certificateContents, string privateKeyPassword, bool includeChain, string newPassword);
     }
 }

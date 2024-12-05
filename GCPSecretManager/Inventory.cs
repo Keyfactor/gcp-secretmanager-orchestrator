@@ -57,7 +57,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
                     if (!CertificateFormatter.IsValid(certificateEntry))
                         continue;
-                    string[] certificateChain = CertificateFormatter.FormatCertificates(certificateEntry);
+                    string[] certificateChain = CertificateFormatter.ConvertSecretToCertificateChain(certificateEntry);
 
                     inventoryItems.Add(new CurrentInventoryItem()
                     {
