@@ -71,12 +71,17 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
                 throw new GCPException($"Secret {alias} already exists but Overwrite set to False.  Set Overwrite to True to replace the certificate.");
 
             if (string.IsNullOrEmpty(StorePassword))
-                newPassword = config.JobCertificate.PrivateKeyPassword;
+            {
+                if (!string.IsNullOrEmpty(PasswordSecretSuffix))
+                    newPassword = config.JobCertificate.PrivateKeyPassword;
+            }
             else
                 newPassword = StorePassword;
 
             string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
             client.AddSecret(alias, secret, entryExists);
+            if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
+                client.AddSecret(alias + PasswordSecretSuffix, newPassword, entryExists);
         }
     }
 }
