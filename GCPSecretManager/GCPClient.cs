@@ -27,7 +27,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         public List<string> GetSecretNames()
         {
             _logger.MethodEntry(LogLevel.Debug);
-            Client
+
             List<string> rtnSecrets = new List<string>();
 
             ListSecretsRequest request = new ListSecretsRequest();
@@ -91,33 +91,42 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValue;
         }
 
-        public void AddSecret(string alias)
+        public void AddSecret(string alias, string secretContent, bool entryExists)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
             try
             {
-                AccessSecretVersionRequest request = new AccessSecretVersionRequest();
                 SecretName secretName = new SecretName(ProjectId, alias);
 
-                //create secret
-                CreateSecretRequest secretRequest = new CreateSecretRequest();
-                secretRequest.ParentAsProjectName = new ProjectName(ProjectId);
-                secretRequest.SecretId = alias;
-                secretRequest.Secret = new Secret { Replication = new Replication { Automatic = new Replication.Types.Automatic() } };
+                if (!entryExists)
+                {
+                    AccessSecretVersionRequest request = new AccessSecretVersionRequest();
 
-                Secret secret = client.CreateSecret(secretRequest);
+                    //create secret
+                    CreateSecretRequest secretRequest = new CreateSecretRequest();
+                    secretRequest.ParentAsProjectName = new ProjectName(ProjectId);
+                    secretRequest.SecretId = alias;
+                    secretRequest.Secret = new Secret { Replication = new Replication { Automatic = new Replication.Types.Automatic() } };
+
+                    Secret secret = Client.CreateSecret(secretRequest);
+                }
 
                 //create new version
                 AddSecretVersionRequest secretVersionRequest = new AddSecretVersionRequest();
                 secretVersionRequest.ParentAsSecretName = secretName;
-                secretVersionRequest.Payload = new SecretPayload { Data = Google.Protobuf.ByteString.CopyFromUtf8(GetPEMCert()) };
+                secretVersionRequest.Payload = new SecretPayload { Data = Google.Protobuf.ByteString.CopyFromUtf8(secretContent) };
 
-                SecretVersion secretVersion = client.AddSecretVersion(secretVersionRequest);
+                SecretVersion secretVersion = Client.AddSecretVersion(secretVersionRequest);
             }
             catch (Exception ex)
             {
-                string i = ex.Message;
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error adding/replacing certificate"));
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
             }
         }
 

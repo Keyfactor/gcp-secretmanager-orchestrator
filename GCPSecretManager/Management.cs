@@ -63,18 +63,20 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
 
         private void PerformAdd(ManagementJobConfiguration config, GCPClient client)
         {
-            bool entryExists = client.Exists(config.JobCertificate.Alias);
+            string alias = config.JobCertificate.Alias;
+            bool entryExists = client.Exists(alias);
             string newPassword = string.Empty;
 
             if (!config.Overwrite && entryExists)
-                throw new GCPException($"Secret {config.JobCertificate.Alias} already exists but Overwrite set to False.  Set Overwrite to True to replace the certificate.");
+                throw new GCPException($"Secret {alias} already exists but Overwrite set to False.  Set Overwrite to True to replace the certificate.");
 
             if (string.IsNullOrEmpty(StorePassword))
                 newPassword = config.JobCertificate.PrivateKeyPassword;
             else
                 newPassword = StorePassword;
 
-            string secret = CertificateFormatter.FormatCertificateEntry(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
+            string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
+            client.AddSecret(alias, secret, entryExists);
         }
     }
 }
