@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
+using Microsoft.Extensions.Logging;
+
+using Keyfactor.Logging;
 using Keyfactor.PKI.PEM;
 using Keyfactor.PKI.PrivateKeys;
 using Keyfactor.PKI.X509;
@@ -21,6 +24,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
         public override bool HasPrivateKey(string entry)
         {
+            Logger.MethodEntry(LogLevel.Debug);
+
             bool rtnValue = false;
 
             foreach (string privateKeyDelimiter in PRIVATE_KEY_DELIMITERS)
@@ -32,16 +37,24 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 }
             }
 
+            Logger.MethodExit(LogLevel.Debug);
+
             return rtnValue;
         }
 
         public override bool IsValid(string entry)
         {
+            Logger.MethodEntry(LogLevel.Debug);
+
+            Logger.MethodExit(LogLevel.Debug);
+
             return entry.Contains(BEGIN_DELIMITER, StringComparison.OrdinalIgnoreCase) && entry.Contains(END_DELIMITER, StringComparison.OrdinalIgnoreCase);
         }
 
         public override string[] ConvertSecretToCertificateChain(string entry)
         {
+            Logger.MethodEntry(LogLevel.Debug);
+
             List<string> rtnCertificates = new List<String>();
             int currStart = 0;
             int currEnd = 0;
@@ -55,11 +68,15 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
             while (entry.IndexOf(END_DELIMITER, currEnd) > -1);
 
+            Logger.MethodExit(LogLevel.Debug);
+
             return rtnCertificates.ToArray();
         }
 
         public override string ConvertCertificateEntryToSecret(string certificateContents, string privateKeyPassword, bool includeChain, string newPassword)
         {
+            Logger.MethodEntry(LogLevel.Debug);
+
             if (string.IsNullOrEmpty(privateKeyPassword))
                 return PemUtilities.DERToPEM(Convert.FromBase64String(certificateContents), PemUtilities.PemObjectType.Certificate);
 
@@ -94,6 +111,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     pemString += chainConverter.ToPEM(true);
                 }
             }
+
+            Logger.MethodExit(LogLevel.Debug);
 
             return pemString;
         }

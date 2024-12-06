@@ -1,16 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 
 using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Extensions;
 using Keyfactor.Orchestrators.Common.Enums;
-
-using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using Grpc.Net.Client.Balancer;
 using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Keyfactor.Extensions.Orchestrator.GCPSecretManager;
 
-namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
+using Microsoft.Extensions.Logging;
+
+namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
     public class Management : JobBase, IManagementJobExtension
     {
@@ -55,7 +54,7 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
             }
             catch (Exception ex)
             {
-                return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure, JobHistoryId = config.JobHistoryId, FailureMessage = "Custom message you want to show to show up as the error message in Job History in KF Command" };
+                return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure, JobHistoryId = config.JobHistoryId, FailureMessage = GCPException.FlattenExceptionMessages(ex, $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Error adding certificate for {config.JobCertificate.Alias}") };
             }
 
             return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
@@ -63,12 +62,17 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
 
         private void PerformAdd(ManagementJobConfiguration config, GCPClient client)
         {
+            Logger.MethodEntry(LogLevel.Debug);
+
             string alias = config.JobCertificate.Alias;
             bool entryExists = client.Exists(alias);
             string newPassword = string.Empty;
 
             if (!config.Overwrite && entryExists)
+            {
+                Logger.MethodExit(LogLevel.Debug);
                 throw new GCPException($"Secret {alias} already exists but Overwrite set to False.  Set Overwrite to True to replace the certificate.");
+            }
 
             if (string.IsNullOrEmpty(StorePassword))
             {
@@ -78,10 +82,18 @@ namespace Keyfactor.Extensions.Orchestrator.SampleOrchestratorExtension
             else
                 newPassword = StorePassword;
 
-            string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
-            client.AddSecret(alias, secret, entryExists);
-            if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
-                client.AddSecret(alias + PasswordSecretSuffix, newPassword, entryExists);
+            try
+            {
+                string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
+                client.AddSecret(alias, secret, entryExists);
+                if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
+                    client.AddSecret(alias + PasswordSecretSuffix, newPassword, entryExists);
+            }
+            catch { throw; }
+            finally
+            {
+                Logger.MethodExit(LogLevel.Debug);
+            }
         }
     }
 }
