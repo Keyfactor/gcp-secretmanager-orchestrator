@@ -15,11 +15,9 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
     {
         public string ExtensionName => "Keyfactor.Extensions.Orchestrator.GCPSecretManager.Management";
 
-        IPAMSecretResolver _resolver;
-
         public Management(IPAMSecretResolver resolver)
         {
-            _resolver = resolver;
+            Resolver = resolver;
         }
 
         public JobResult ProcessJob(ManagementJobConfiguration config)

@@ -55,6 +55,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         {
             Logger.MethodEntry(LogLevel.Debug);
 
+            entry = entry.Replace(System.Environment.NewLine, string.Empty);
             List<string> rtnCertificates = new List<String>();
             int currStart = 0;
             int currEnd = 0;
@@ -63,7 +64,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 currStart = entry.IndexOf(BEGIN_DELIMITER, currEnd) + BEGIN_DELIMITER.Length;
                 currEnd = entry.IndexOf(END_DELIMITER, currStart);
-                rtnCertificates.Add(entry.Substring(currStart + BEGIN_DELIMITER.Length, currEnd - (currStart + BEGIN_DELIMITER.Length)));
+                rtnCertificates.Add(entry.Substring(currStart, currEnd - currStart));
                 currEnd++;
             }
             while (entry.IndexOf(END_DELIMITER, currEnd) > -1);
