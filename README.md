@@ -115,7 +115,7 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
 
     | Name | Display Name | Description | Type | Default Value/Options | Required |
     | ---- | ------------ | ---- | --------------------- | -------- | ----------- |
-    | PasswordSecretSuffix | Password Secret Location Suffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information | String |  | 🔲 Unchecked |
+    | PasswordSecretSuffix | Password Secret Location Suffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information | String |  | 🔲 Unchecked |
     | IncludeChain | Include Chain | Determines whether to include the certificate chain when adding a certificate as a secret. | bool | True | 🔲 Unchecked |
 
     The Custom Fields tab should look like this:
@@ -193,9 +193,9 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
         | Client Machine | Not used |
         | Store Path | The Project ID of the Google Secret Manager being managed. |
         | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
-        | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information |
+        | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
         | IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
-        | Store Password | Password used encrypt the private key when adding a certificate as a secret.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information |
+        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
 
         
 
@@ -204,7 +204,7 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
         If a PAM provider was installed _on the Universal Orchestrator_ in the [Installation](#Installation) section, the following parameters can be configured for retrieval _on the Universal Orchestrator_.
         | Attribute | Description |
         | --------- | ----------- |
-        | Store Password | Password used encrypt the private key when adding a certificate as a secret.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information |
+        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
 
         Please refer to the **Universal Orchestrator (remote)** usage section ([PAM providers on the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam)) for your selected PAM provider for instructions on how to load attributes orchestrator-side.
 
@@ -233,9 +233,9 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
         | Client Machine | Not used |
         | Store Path | The Project ID of the Google Secret Manager being managed. |
         | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
-        | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information |
+        | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
         | IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
-        | Store Password | Password used encrypt the private key when adding a certificate as a secret.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information |
+        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
 
         
 
@@ -244,7 +244,7 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
         If a PAM provider was installed _on the Universal Orchestrator_ in the [Installation](#Installation) section, the following parameters can be configured for retrieval _on the Universal Orchestrator_.
         | Attribute | Description |
         | --------- | ----------- |
-        | Store Password | Password used encrypt the private key when adding a certificate as a secret.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information |
+        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
 
         > Any secret can be rendered by a PAM provider _installed on the Keyfactor Command server_. The above parameters are specific to attributes that can be fetched by an installed PAM provider running on the Universal Orchestrator server itself. 
         </details>
@@ -262,14 +262,14 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
 
 
 
-## Secret Encryption Details
+## Certificate Encryption Details
 
 For GCP Secret Manager secrets containing encrypted private keys, the GCP Secret Manager Orchestrator Extension provides two ways to manage the encryption password:
 
 1. Using the Keyfactor Command Store Password on the certificate store definition to store the password that will be used to encrypt ALL private keys for the GCP Secret Manager project.
 2. Using the Password Secret Location Suffix field on the certificate store definition to store a "suffix" that will be used in conjunction with the secret alias (name) to create a second secret in Secret Manager to store the encryption password.
 
-If the Store Password has a value, this will be used to encrypt the private key during a Management Add job.  If no value is set for the Store Password, the one time password that Keyfactor Command generates when triggering a Management-Add job will be used to encrypt the private key and this password will be stored as a secret in GCP Secret Manager with a name of Alias + Password Secret Location Suffix.  For example, if the certificate alias is set as "Alias1" and the Password Secret Location Suffix is set as "_Key", the certificate and encrypted private key will be stored in a secret named "Alias1" and the password for the key encryption will be stored in a secret named "Alias1_Key".
+If the Store Password has a value, this will be used to encrypt the private key during a Management Add job.  If no value is set for the Store Password, the one time password that Keyfactor Command generates when triggering a Management-Add job will be used to encrypt the private key and this password will be stored as a secret in GCP Secret Manager with a name of Alias + Password Secret Location Suffix.  For example, if the certificate alias is set as "Alias1" and the Password Secret Location Suffix is set as "_Key", the certificate and encrypted private key will be stored in a secret named "Alias1" and the password for the key encryption will be stored in a secret named "Alias1_Key".  Please note that if using the generated password Keyfactor Command provides and storing the password in Secret Manager, each renewal/replacement of a certificate will encrypt the private key with a new generated password, which will then be stored as a new version of the password secret.
 
 
 ## License
