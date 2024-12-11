@@ -121,7 +121,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
             catch (Exception ex)
             {
-                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error adding/replacing certificate"));
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error adding/replacing certificate.  "));
                 throw;
             }
             finally
