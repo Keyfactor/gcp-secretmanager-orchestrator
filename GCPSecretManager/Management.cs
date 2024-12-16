@@ -52,7 +52,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
             catch (Exception ex)
             {
-                return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure, JobHistoryId = config.JobHistoryId, FailureMessage = GCPException.FlattenExceptionMessages(ex, $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Error adding certificate for {config.JobCertificate.Alias}") };
+                return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Failure, JobHistoryId = config.JobHistoryId, FailureMessage = GCPException.FlattenExceptionMessages(ex, $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Error adding certificate for {config.JobCertificate.Alias}.  ") };
             }
 
             return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
@@ -68,8 +68,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
             if (!config.Overwrite && entryExists)
             {
+                string errMsg = $"Secret {alias} already exists but Overwrite set to False.  Set Overwrite to True to replace the certificate.";
+                Logger.LogError(errMsg);
                 Logger.MethodExit(LogLevel.Debug);
-                throw new GCPException($"Secret {alias} already exists but Overwrite set to False.  Set Overwrite to True to replace the certificate.");
+                throw new GCPException(errMsg);
             }
 
             if (string.IsNullOrEmpty(StorePassword))
@@ -85,7 +87,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
                 client.AddSecret(alias, secret, entryExists);
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
-                    client.AddSecret(alias + PasswordSecretSuffix, newPassword, entryExists);
+                {
+                    bool passwordEntryExists = client.Exists(alias + PasswordSecretSuffix);
+                    client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists);
+                }
             }
             catch { throw; }
             finally

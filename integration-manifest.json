@@ -36,7 +36,7 @@
             "StoreRequired": true,
             "Style": "Default",
             "StorePassword": {
-              "Description": "Password used encrypt the private key when adding a certificate as a secret.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information",
+              "Description": "Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information",
               "IsPAMEligible": true
             }
           },
@@ -49,7 +49,7 @@
               "DefaultValue": "",
               "Required": false,
               "IsPAMEligible": false,
-              "Description": "If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information"
+              "Description": "If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information"
             },
             {
               "Name": "IncludeChain",
