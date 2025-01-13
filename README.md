@@ -116,7 +116,7 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
     | Name | Display Name | Description | Type | Default Value/Options | Required |
     | ---- | ------------ | ---- | --------------------- | -------- | ----------- |
     | PasswordSecretSuffix | Password Secret Location Suffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information | String |  | 🔲 Unchecked |
-    | IncludeChain | Include Chain | Determines whether to include the certificate chain when adding a certificate as a secret. | bool | True | 🔲 Unchecked |
+    | IncludeChain | Include Chain | Determines whether to include the certificate chain when adding a certificate as a secret. | Bool | True | 🔲 Unchecked |
 
     The Custom Fields tab should look like this:
 
