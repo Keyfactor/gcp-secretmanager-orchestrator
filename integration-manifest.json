@@ -1,72 +1,72 @@
 {
-  "$schema": "https://keyfactor.github.io/v2/integration-manifest-schema.json",
-  "integration_type": "orchestrator",
-  "name": "GCP Secret Manager Universal Orchestrator",
-  "status": "production",
-  "link_github": false,
-  "update_catalog": false,
-  "support_level": "kf-supported",
-  "release_dir": "GCPSecretManager/bin/Release",
-  "release_project": "GCPSecretManager/GCPSecretManager.csproj",
-  "description": "This orchestrator extension manages certificates stored as secrets in Google Secret Manager.",
-  "about": {
-    "orchestrator": {
-      "UOFramework": "10.4",
-      "pam_support": true,
-      "keyfactor_platform_version": "10.4",
-      "store_types": [
-        {
-          "Name": "GCPScrtMgr",
-          "ShortName": "GCPScrtMgr",
-          "Capability": "GCPScrtMgr",
-          "ServerRequired": false,
-          "BlueprintAllowed": true,
-          "CustomAliasAllowed": "Required",
-          "PowerShell": false,
-          "PrivateKeyAllowed": "Optional",
-          "SupportedOperations": {
-            "Add": true,
-            "Create": false,
-            "Discovery": false,
-            "Enrollment": false,
-            "Remove": true
-          },
-          "PasswordOptions": {
-            "EntrySupported": false,
-            "StoreRequired": true,
-            "Style": "Default",
-            "StorePassword": {
-              "Description": "Password used encrypt the private key when adding a certificate as a secret.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information",
-              "IsPAMEligible": true
-            }
-          },
-          "Properties": [
-            {
-              "Name": "PasswordSecretSuffix",
-              "DisplayName": "Password Secret Location Suffix",
-              "Type": "String",
-              "DependsOn": "",
-              "DefaultValue": "",
-              "Required": false,
-              "IsPAMEligible": false,
-              "Description": "If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details ](#certificate-encryption-details) for more information"
-            },
-            {
-              "Name": "IncludeChain",
-              "DisplayName": "Include Chain",
-              "Type": "bool",
-              "DependsOn": "",
-              "DefaultValue": "True",
-              "Required": false,
-              "IsPAMEligible": false,
-              "Description": "Determines whether to include the certificate chain when adding a certificate as a secret."
-            }
-          ],
-          "EntryParameters": [],
-          "ClientMachineDescription": "Not used",
-          "StorePathDescription": "The Project ID of the Google Secret Manager being managed."
+    "$schema": "https://keyfactor.github.io/v2/integration-manifest-schema.json",
+    "integration_type": "orchestrator",
+    "name": "GCP Secret Manager Universal Orchestrator",
+    "status": "production",
+    "link_github": false,
+    "update_catalog": false,
+    "support_level": "kf-supported",
+    "release_dir": "GCPSecretManager/bin/Release",
+    "release_project": "GCPSecretManager/GCPSecretManager.csproj",
+    "description": "This orchestrator extension manages certificates stored as secrets in Google Secret Manager.",
+    "about": {
+        "orchestrator": {
+            "UOFramework": "10.4",
+            "pam_support": true,
+            "keyfactor_platform_version": "10.4",
+            "store_types": [
+                {
+                    "Name": "GCPScrtMgr",
+                    "ShortName": "GCPScrtMgr",
+                    "Capability": "GCPScrtMgr",
+                    "ServerRequired": false,
+                    "BlueprintAllowed": true,
+                    "CustomAliasAllowed": "Required",
+                    "PowerShell": false,
+                    "PrivateKeyAllowed": "Optional",
+                    "SupportedOperations": {
+                        "Add": true,
+                        "Create": false,
+                        "Discovery": false,
+                        "Enrollment": false,
+                        "Remove": true
+                    },
+                    "PasswordOptions": {
+                        "EntrySupported": false,
+                        "StoreRequired": true,
+                        "Style": "Default",
+                        "StorePassword": {
+                            "Description": "Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information",
+                            "IsPAMEligible": true
+                        }
+                    },
+                    "Properties": [
+                        {
+                            "Name": "PasswordSecretSuffix",
+                            "DisplayName": "Password Secret Location Suffix",
+                            "Type": "String",
+                            "DependsOn": "",
+                            "DefaultValue": "",
+                            "Required": false,
+                            "IsPAMEligible": false,
+                            "Description": "If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information"
+                        },
+                        {
+                            "Name": "IncludeChain",
+                            "DisplayName": "Include Chain",
+                            "Type": "Bool",
+                            "DependsOn": "",
+                            "DefaultValue": "True",
+                            "Required": false,
+                            "IsPAMEligible": false,
+                            "Description": "Determines whether to include the certificate chain when adding a certificate as a secret."
+                        }
+                    ],
+                    "EntryParameters": [],
+                    "ClientMachineDescription": "Not used",
+                    "StorePathDescription": "The Project ID of the Google Secret Manager being managed."
+                }
+            ]
         }
-      ]
     }
-  }
 }
