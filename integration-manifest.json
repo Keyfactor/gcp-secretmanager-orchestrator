@@ -3,8 +3,8 @@
     "integration_type": "orchestrator",
     "name": "GCP Secret Manager Universal Orchestrator",
     "status": "production",
-    "link_github": false,
-    "update_catalog": false,
+    "link_github": true,
+    "update_catalog": true,
     "support_level": "kf-supported",
     "release_dir": "GCPSecretManager/bin/Release",
     "release_project": "GCPSecretManager/GCPSecretManager.csproj",
@@ -70,3 +70,4 @@
         }
     }
 }
+
