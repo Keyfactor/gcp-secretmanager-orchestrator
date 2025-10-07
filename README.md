@@ -46,9 +46,9 @@ For use cases including an encrypted private key, please refer to [Certificate E
 This integration is compatible with Keyfactor Universal Orchestrator version 10.4 and later.
 
 ## Support
-The GCP Secret Manager Universal Orchestrator extension is supported by Keyfactor for Keyfactor customers. If you have a support issue, please open a support ticket with your Keyfactor representative. If you have a support issue, please open a support ticket via the Keyfactor Support Portal at https://support.keyfactor.com. 
- 
-> To report a problem or suggest a new feature, use the **[Issues](../../issues)** tab. If you want to contribute actual bug fixes or proposed enhancements, use the **[Pull requests](../../pulls)** tab.
+The GCP Secret Manager Universal Orchestrator extension is supported by Keyfactor. If you require support for any issues or have feature request, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com.
+
+> If you want to contribute bug fixes or additional enhancements, use the **[Pull requests](../../pulls)** tab.
 
 ## Requirements & Prerequisites
 
@@ -60,84 +60,119 @@ The GCP Secret Manager Orchestrator Extension uses Google Application Default Cr
 The GCP project and account being used to access Secret Manager must have access to and enabled the Secret Manger API and also must have assigned to it the Secret Manager Admin role.
 
 
-## Create the GCPScrtMgr Certificate Store Type
+## GCPScrtMgr Certificate Store Type
 
 To use the GCP Secret Manager Universal Orchestrator extension, you **must** create the GCPScrtMgr Certificate Store Type. This only needs to happen _once_ per Keyfactor Command instance.
 
 
 
-* **Create GCPScrtMgr using kfutil**:
-
-    ```shell
-    # GCPScrtMgr
-    kfutil store-types create GCPScrtMgr
-    ```
-
-* **Create GCPScrtMgr manually in the Command UI**:
-    <details><summary>Create GCPScrtMgr manually in the Command UI</summary>
-
-    Create a store type called `GCPScrtMgr` with the attributes in the tables below:
-
-    #### Basic Tab
-    | Attribute | Value | Description |
-    | --------- | ----- | ----- |
-    | Name | GCPScrtMgr | Display name for the store type (may be customized) |
-    | Short Name | GCPScrtMgr | Short display name for the store type |
-    | Capability | GCPScrtMgr | Store type name orchestrator will register with. Check the box to allow entry of value |
-    | Supports Add | ✅ Checked | Check the box. Indicates that the Store Type supports Management Add |
-    | Supports Remove | ✅ Checked | Check the box. Indicates that the Store Type supports Management Remove |
-    | Supports Discovery | 🔲 Unchecked |  Indicates that the Store Type supports Discovery |
-    | Supports Reenrollment | 🔲 Unchecked |  Indicates that the Store Type supports Reenrollment |
-    | Supports Create | 🔲 Unchecked |  Indicates that the Store Type supports store creation |
-    | Needs Server | 🔲 Unchecked | Determines if a target server name is required when creating store |
-    | Blueprint Allowed | ✅ Checked | Determines if store type may be included in an Orchestrator blueprint |
-    | Uses PowerShell | 🔲 Unchecked | Determines if underlying implementation is PowerShell |
-    | Requires Store Password | ✅ Checked | Enables users to optionally specify a store password when defining a Certificate Store. |
-    | Supports Entry Password | 🔲 Unchecked | Determines if an individual entry within a store can have a password. |
-
-    The Basic tab should look like this:
-
-    ![GCPScrtMgr Basic Tab](docsource/images/GCPScrtMgr-basic-store-type-dialog.png)
-
-    #### Advanced Tab
-    | Attribute | Value | Description |
-    | --------- | ----- | ----- |
-    | Supports Custom Alias | Required | Determines if an individual entry within a store can have a custom Alias. |
-    | Private Key Handling | Optional | This determines if Keyfactor can send the private key associated with a certificate to the store. Required because IIS certificates without private keys would be invalid. |
-    | PFX Password Style | Default | 'Default' - PFX password is randomly generated, 'Custom' - PFX password may be specified when the enrollment job is created (Requires the Allow Custom Password application setting to be enabled.) |
-
-    The Advanced tab should look like this:
-
-    ![GCPScrtMgr Advanced Tab](docsource/images/GCPScrtMgr-advanced-store-type-dialog.png)
-
-    #### Custom Fields Tab
-    Custom fields operate at the certificate store level and are used to control how the orchestrator connects to the remote target server containing the certificate store to be managed. The following custom fields should be added to the store type:
-
-    | Name | Display Name | Description | Type | Default Value/Options | Required |
-    | ---- | ------------ | ---- | --------------------- | -------- | ----------- |
-    | PasswordSecretSuffix | Password Secret Location Suffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information | String |  | 🔲 Unchecked |
-    | IncludeChain | Include Chain | Determines whether to include the certificate chain when adding a certificate as a secret. | Bool | True | 🔲 Unchecked |
-
-    The Custom Fields tab should look like this:
-
-    ![GCPScrtMgr Custom Fields Tab](docsource/images/GCPScrtMgr-custom-fields-store-type-dialog.png)
 
 
 
-    </details>
+
+
+#### Supported Operations
+
+| Operation    | Is Supported                                                                                                           |
+|--------------|------------------------------------------------------------------------------------------------------------------------|
+| Add          | ✅ Checked        |
+| Remove       | ✅ Checked     |
+| Discovery    | 🔲 Unchecked  |
+| Reenrollment | 🔲 Unchecked |
+| Create       | 🔲 Unchecked     |
+
+#### Store Type Creation
+
+##### Using kfutil:
+`kfutil` is a custom CLI for the Keyfactor Command API and can be used to create certificate store types.
+For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out the [docs](https://github.com/Keyfactor/kfutil?tab=readme-ov-file#quickstart)
+   <details><summary>Click to expand GCPScrtMgr kfutil details</summary>
+
+   ##### Using online definition from GitHub:
+   This will reach out to GitHub and pull the latest store-type definition
+   ```shell
+   # GCPScrtMgr
+   kfutil store-types create GCPScrtMgr
+   ```
+
+   ##### Offline creation using integration-manifest file:
+   If required, it is possible to create store types from the [integration-manifest.json](./integration-manifest.json) included in this repo.
+   You would first download the [integration-manifest.json](./integration-manifest.json) and then run the following command
+   in your offline environment.
+   ```shell
+   kfutil store-types create --from-file integration-manifest.json
+   ```
+   </details>
+
+
+#### Manual Creation
+Below are instructions on how to create the GCPScrtMgr store type manually in
+the Keyfactor Command Portal
+   <details><summary>Click to expand manual GCPScrtMgr details</summary>
+
+   Create a store type called `GCPScrtMgr` with the attributes in the tables below:
+
+   ##### Basic Tab
+   | Attribute | Value | Description |
+   | --------- | ----- | ----- |
+   | Name | GCPScrtMgr | Display name for the store type (may be customized) |
+   | Short Name | GCPScrtMgr | Short display name for the store type |
+   | Capability | GCPScrtMgr | Store type name orchestrator will register with. Check the box to allow entry of value |
+   | Supports Add | ✅ Checked | Check the box. Indicates that the Store Type supports Management Add |
+   | Supports Remove | ✅ Checked | Check the box. Indicates that the Store Type supports Management Remove |
+   | Supports Discovery | 🔲 Unchecked |  Indicates that the Store Type supports Discovery |
+   | Supports Reenrollment | 🔲 Unchecked |  Indicates that the Store Type supports Reenrollment |
+   | Supports Create | 🔲 Unchecked |  Indicates that the Store Type supports store creation |
+   | Needs Server | 🔲 Unchecked | Determines if a target server name is required when creating store |
+   | Blueprint Allowed | ✅ Checked | Determines if store type may be included in an Orchestrator blueprint |
+   | Uses PowerShell | 🔲 Unchecked | Determines if underlying implementation is PowerShell |
+   | Requires Store Password | ✅ Checked | Enables users to optionally specify a store password when defining a Certificate Store. |
+   | Supports Entry Password | 🔲 Unchecked | Determines if an individual entry within a store can have a password. |
+
+   The Basic tab should look like this:
+
+   ![GCPScrtMgr Basic Tab](docsource/images/GCPScrtMgr-basic-store-type-dialog.png)
+
+   ##### Advanced Tab
+   | Attribute | Value | Description |
+   | --------- | ----- | ----- |
+   | Supports Custom Alias | Required | Determines if an individual entry within a store can have a custom Alias. |
+   | Private Key Handling | Optional | This determines if Keyfactor can send the private key associated with a certificate to the store. Required because IIS certificates without private keys would be invalid. |
+   | PFX Password Style | Default | 'Default' - PFX password is randomly generated, 'Custom' - PFX password may be specified when the enrollment job is created (Requires the Allow Custom Password application setting to be enabled.) |
+
+   The Advanced tab should look like this:
+
+   ![GCPScrtMgr Advanced Tab](docsource/images/GCPScrtMgr-advanced-store-type-dialog.png)
+
+   > For Keyfactor **Command versions 24.4 and later**, a Certificate Format dropdown is available with PFX and PEM options. Ensure that **PFX** is selected, as this determines the format of new and renewed certificates sent to the Orchestrator during a Management job. Currently, all Keyfactor-supported Orchestrator extensions support only PFX.
+
+   ##### Custom Fields Tab
+   Custom fields operate at the certificate store level and are used to control how the orchestrator connects to the remote target server containing the certificate store to be managed. The following custom fields should be added to the store type:
+
+   | Name | Display Name | Description | Type | Default Value/Options | Required |
+   | ---- | ------------ | ---- | --------------------- | -------- | ----------- |
+   | PasswordSecretSuffix | Password Secret Location Suffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information | String |  | 🔲 Unchecked |
+   | IncludeChain | Include Chain | Determines whether to include the certificate chain when adding a certificate as a secret. | Bool | True | 🔲 Unchecked |
+
+   The Custom Fields tab should look like this:
+
+   ![GCPScrtMgr Custom Fields Tab](docsource/images/GCPScrtMgr-custom-fields-store-type-dialog.png)
+
+   </details>
 
 ## Installation
 
-1. **Download the latest GCP Secret Manager Universal Orchestrator extension from GitHub.** 
+1. **Download the latest GCP Secret Manager Universal Orchestrator extension from GitHub.**
 
     Navigate to the [GCP Secret Manager Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/gcp-secretmanager-orchestrator/releases/latest). Refer to the compatibility matrix below to determine whether the `net6.0` or `net8.0` asset should be downloaded. Then, click the corresponding asset to download the zip archive.
-    | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `gcp-secretmanager-orchestrator` .NET version to download |
-    | --------- | ----------- | ----------- | ----------- |
-    | Older than `11.0.0` | | | `net6.0` |
-    | Between `11.0.0` and `11.5.1` (inclusive) | `net6.0` | | `net6.0` | 
-    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `Disable` | `net6.0` | 
-    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` | 
-    | `11.6` _and_ newer | `net8.0` | | `net8.0` |
+
+   | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `gcp-secretmanager-orchestrator` .NET version to download |
+   | --------- | ----------- | ----------- | ----------- |
+   | Older than `11.0.0` | | | `net6.0` |
+   | Between `11.0.0` and `11.5.1` (inclusive) | `net6.0` | | `net6.0` |
+   | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `Disable` | `net6.0` |
+   | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` |
+   | `11.6` _and_ newer | `net8.0` | | `net8.0` |
 
     Unzip the archive containing extension assemblies to a known location.
 
@@ -147,9 +182,9 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
 
     * **Default on Windows** - `C:\Program Files\Keyfactor\Keyfactor Orchestrator\extensions`
     * **Default on Linux** - `/opt/keyfactor/orchestrator/extensions`
-    
+
 3. **Create a new directory for the GCP Secret Manager Universal Orchestrator extension inside the extensions directory.**
-        
+
     Create a new directory called `gcp-secretmanager-orchestrator`.
     > The directory name does not need to match any names used elsewhere; it just has to be unique within the extensions directory.
 
@@ -160,14 +195,14 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
     Refer to [Starting/Restarting the Universal Orchestrator service](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/StarttheService.htm).
 
 
-6. **(optional) PAM Integration** 
+6. **(optional) PAM Integration**
 
     The GCP Secret Manager Universal Orchestrator extension is compatible with all supported Keyfactor PAM extensions to resolve PAM-eligible secrets. PAM extensions running on Universal Orchestrators enable secure retrieval of secrets from a connected PAM provider.
 
-    To configure a PAM provider, [reference the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam) to select an extension, and follow the associated instructions to install it on the Universal Orchestrator (remote).
+    To configure a PAM provider, [reference the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam) to select an extension and follow the associated instructions to install it on the Universal Orchestrator (remote).
 
 
-> The above installation steps can be supplimented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/CustomExtensions.htm?Highlight=extensions).
+> The above installation steps can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/CustomExtensions.htm?Highlight=extensions).
 
 
 
@@ -175,89 +210,84 @@ To use the GCP Secret Manager Universal Orchestrator extension, you **must** cre
 
 
 
-* **Manually with the Command UI**
+### Store Creation
 
-    <details><summary>Create Certificate Stores manually in the UI</summary>
+#### Manually with the Command UI
 
-    1. **Navigate to the _Certificate Stores_ page in Keyfactor Command.**
+<details><summary>Click to expand details</summary>
 
-        Log into Keyfactor Command, toggle the _Locations_ dropdown, and click _Certificate Stores_.
+1. **Navigate to the _Certificate Stores_ page in Keyfactor Command.**
 
-    2. **Add a Certificate Store.**
+    Log into Keyfactor Command, toggle the _Locations_ dropdown, and click _Certificate Stores_.
 
-        Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
-        | Attribute | Description |
-        | --------- | ----------- |
-        | Category | Select "GCPScrtMgr" or the customized certificate store name from the previous step. |
-        | Container | Optional container to associate certificate store with. |
-        | Client Machine | Not used |
-        | Store Path | The Project ID of the Google Secret Manager being managed. |
-        | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
-        | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
-        | IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
-        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+2. **Add a Certificate Store.**
 
-        
+    Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
 
-        <details><summary>Attributes eligible for retrieval by a PAM Provider on the Universal Orchestrator</summary>
+   | Attribute | Description                                             |
+   | --------- |---------------------------------------------------------|
+   | Category | Select "GCPScrtMgr" or the customized certificate store name from the previous step. |
+   | Container | Optional container to associate certificate store with. |
+   | Client Machine | Not used |
+   | Store Path | The Project ID of the Google Secret Manager being managed. |
+   | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+   | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
+   | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+   | IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
 
-        If a PAM provider was installed _on the Universal Orchestrator_ in the [Installation](#Installation) section, the following parameters can be configured for retrieval _on the Universal Orchestrator_.
-        | Attribute | Description |
-        | --------- | ----------- |
-        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+</details>
 
-        Please refer to the **Universal Orchestrator (remote)** usage section ([PAM providers on the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam)) for your selected PAM provider for instructions on how to load attributes orchestrator-side.
 
-        > Any secret can be rendered by a PAM provider _installed on the Keyfactor Command server_. The above parameters are specific to attributes that can be fetched by an installed PAM provider running on the Universal Orchestrator server itself. 
-        </details>
-        
 
-    </details>
+#### Using kfutil CLI
 
-* **Using kfutil**
-    
-    <details><summary>Create Certificate Stores with kfutil</summary>
-    
-    1. **Generate a CSV template for the GCPScrtMgr certificate store**
+<details><summary>Click to expand details</summary>
 
-        ```shell
-        kfutil stores import generate-template --store-type-name GCPScrtMgr --outpath GCPScrtMgr.csv
-        ```
-    2. **Populate the generated CSV file**
+1. **Generate a CSV template for the GCPScrtMgr certificate store**
 
-        Open the CSV file, and reference the table below to populate parameters for each **Attribute**.
-        | Attribute | Description |
-        | --------- | ----------- |
-        | Category | Select "GCPScrtMgr" or the customized certificate store name from the previous step. |
-        | Container | Optional container to associate certificate store with. |
-        | Client Machine | Not used |
-        | Store Path | The Project ID of the Google Secret Manager being managed. |
-        | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
-        | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
-        | IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
-        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+    ```shell
+    kfutil stores import generate-template --store-type-name GCPScrtMgr --outpath GCPScrtMgr.csv
+    ```
+2. **Populate the generated CSV file**
 
-        
+    Open the CSV file, and reference the table below to populate parameters for each **Attribute**.
 
-        <details><summary>Attributes eligible for retrieval by a PAM Provider on the Universal Orchestrator</summary>
+   | Attribute | Description |
+   | --------- | ----------- |
+   | Category | Select "GCPScrtMgr" or the customized certificate store name from the previous step. |
+   | Container | Optional container to associate certificate store with. |
+   | Client Machine | Not used |
+   | Store Path | The Project ID of the Google Secret Manager being managed. |
+   | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+   | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
+   | Properties.PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+   | Properties.IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
 
-        If a PAM provider was installed _on the Universal Orchestrator_ in the [Installation](#Installation) section, the following parameters can be configured for retrieval _on the Universal Orchestrator_.
-        | Attribute | Description |
-        | --------- | ----------- |
-        | Store Password | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+3. **Import the CSV file to create the certificate stores**
 
-        > Any secret can be rendered by a PAM provider _installed on the Keyfactor Command server_. The above parameters are specific to attributes that can be fetched by an installed PAM provider running on the Universal Orchestrator server itself. 
-        </details>
-        
+    ```shell
+    kfutil stores import csv --store-type-name GCPScrtMgr --file GCPScrtMgr.csv
+    ```
 
-    3. **Import the CSV file to create the certificate stores** 
+</details>
 
-        ```shell
-        kfutil stores import csv --store-type-name GCPScrtMgr --file GCPScrtMgr.csv
-        ```
-    </details>
 
-> The content in this section can be supplimented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
+#### PAM Provider Eligible Fields
+<details><summary>Attributes eligible for retrieval by a PAM Provider on the Universal Orchestrator</summary>
+
+If a PAM provider was installed _on the Universal Orchestrator_ in the [Installation](#Installation) section, the following parameters can be configured for retrieval _on the Universal Orchestrator_.
+
+   | Attribute | Description |
+   | --------- | ----------- |
+   | StorePassword | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+
+Please refer to the **Universal Orchestrator (remote)** usage section ([PAM providers on the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam)) for your selected PAM provider for instructions on how to load attributes orchestrator-side.
+> Any secret can be rendered by a PAM provider _installed on the Keyfactor Command server_. The above parameters are specific to attributes that can be fetched by an installed PAM provider running on the Universal Orchestrator server itself.
+
+</details>
+
+
+> The content in this section can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
 
 
 
