@@ -1,5 +1,6 @@
 ﻿using Google.Api.Gax.ResourceNames;
 using Google.Cloud.SecretManager.V1;
+using Google.Cloud.ResourceManager.V3;
 
 using Microsoft.Extensions.Logging;
 
@@ -8,6 +9,7 @@ using Keyfactor.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Google.Api.Gax;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -16,12 +18,18 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         ILogger _logger;
         string ProjectId { get; set; }
         SecretManagerServiceClient Client { get; set; }
+        TagKeysClient TagKeysClient { get; set; }
+        TagBindingsClient TagBindingsClient { get; set; }
+        TagValuesClient TagValuesClient { get; set; }
 
         public GCPClient(string projectId)
         {
             _logger = LogHandler.GetClassLogger(this.GetType());
             ProjectId = projectId;
             Client = SecretManagerServiceClient.Create();
+            TagKeysClient = TagKeysClient.Create();
+            TagBindingsClient = TagBindingsClient.Create();
+            TagValuesClient = TagValuesClient.Create();
         }
 
         public List<string> GetSecretNames()
@@ -179,6 +187,134 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
 
             return rtnValue;
+        }
+
+        public List<string> GetAllTagValuePairs()
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            List<string> tagValuePairs = new List<string>();
+
+            ListTagKeysRequest request = new ListTagKeysRequest()
+            {
+                ParentAsResourceName = ProjectName.FromProject(ProjectId),
+                PageSize = 50
+            };
+
+            ListTagKeysResponse response;
+
+            try
+            {
+                do
+                {
+                    response = TagKeysClient.ListTagKeys(request).AsRawResponses().FirstOrDefault();
+                    if (response == null)
+                        break;
+                    else
+                    {
+                        foreach (var item in response.TagKeys)
+                        {
+                            List<string> tagValues = GetTagValues(item.Name);
+                            foreach (string tagValue in tagValues)
+                                tagValuePairs.Add(item.Name + ":" + tagValue);
+                        }
+                    }
+
+                    request.PageToken = response.NextPageToken;
+                } while (!string.IsNullOrEmpty(response.NextPageToken));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error retrieving Tag Key/Value Pairs: "));
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return tagValuePairs;
+        }
+
+        public Dictionary<string, object> GetSecretTags(string secretResource)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+            Dictionary<string, object> rtnValue = new Dictionary<string, object>();
+            List<string> tagPairs = new List<string>();
+
+            ListTagBindingsRequest request = new ListTagBindingsRequest()
+            {
+                ParentAsResourceName = new UnparsedResourceName($"//secretmanager.googleapis.com/{secretResource}")
+            };
+
+            try
+            {
+                ListTagBindingsResponse response = TagBindingsClient.ListTagBindings(request).AsRawResponses().FirstOrDefault();
+                foreach(TagBinding x in response.TagBindings)
+                {
+                    TagValue y = TagValuesClient.GetTagValue(x.TagValue);
+                    tagPairs.Add(x.Name + ":" + y.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            if (tagPairs.Count > 0)
+                rtnValue.Add("tags", string.Join(",", tagPairs));
+
+            return rtnValue;
+        }
+
+        public List<string> GetTagValues(string tagName)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            List<string> rtnValues = new List<string>();
+
+            ListTagValuesRequest request = new ListTagValuesRequest()
+            {
+                ParentAsResourceName = TagKeyName.FromTagKey(tagName),
+                PageSize = 20
+            };
+
+            ListTagValuesResponse response;
+
+            try
+            {
+                do
+                {
+                    response = TagValuesClient.ListTagValues(request).AsRawResponses().FirstOrDefault();
+                    if (response == null)
+                        break;
+                    else
+                    {
+                        foreach (var item in response.TagValues)
+                        {
+                            rtnValues.Add(item.Name);
+                        }
+                    }
+
+                    request.PageToken = response.NextPageToken;
+                } while (!string.IsNullOrEmpty(response.NextPageToken));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error retrieving Tag Values: "));
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return rtnValues;
         }
     }
 }
