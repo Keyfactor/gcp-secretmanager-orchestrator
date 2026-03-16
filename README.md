@@ -57,7 +57,7 @@ Before installing the GCP Secret Manager Universal Orchestrator extension, we re
 
 The GCP Secret Manager Orchestrator Extension uses Google Application Default Credentials (ADC) for authentication.  Testing of this orchestrator extension was performed using a service account, but please review [Google Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) for more information on the various ways authentication can be set up.
 
-The GCP project and account being used to access Secret Manager must have access to and enabled the Secret Manger API and also must have assigned to it the Secret Manager Admin role.
+The GCP project and account being used to access Secret Manager must have access to and enabled the Secret Manger API and also must have assigned to it the Secret Manager Admin and Tag Administrator roles.
 
 
 ## GCPScrtMgr Certificate Store Type
@@ -158,25 +158,41 @@ the Keyfactor Command Portal
 
    ![GCPScrtMgr Custom Fields Tab](docsource/images/GCPScrtMgr-custom-fields-store-type-dialog.png)
 
+
+   ###### Password Secret Location Suffix
+   If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information
+
+   ![GCPScrtMgr Custom Field - PasswordSecretSuffix](docsource/images/GCPScrtMgr-custom-field-PasswordSecretSuffix-dialog.png)
+   ![GCPScrtMgr Custom Field - PasswordSecretSuffix](docsource/images/GCPScrtMgr-custom-field-PasswordSecretSuffix-validation-options-dialog.png)
+
+
+
+   ###### Include Chain
+   Determines whether to include the certificate chain when adding a certificate as a secret.
+
+   ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-dialog.png)
+   ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-validation-options-dialog.png)
+
+
+
+
+
    </details>
 
 ## Installation
 
 1. **Download the latest GCP Secret Manager Universal Orchestrator extension from GitHub.**
 
-    Navigate to the [GCP Secret Manager Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/gcp-secretmanager-orchestrator/releases/latest). Refer to the compatibility matrix below to determine whether the `net6.0` or `net8.0` asset should be downloaded. Then, click the corresponding asset to download the zip archive.
+    Navigate to the [GCP Secret Manager Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/gcp-secretmanager-orchestrator/releases/latest). Refer to the compatibility matrix below to determine the asset should be downloaded. Then, click the corresponding asset to download the zip archive.
 
    | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `gcp-secretmanager-orchestrator` .NET version to download |
    | --------- | ----------- | ----------- | ----------- |
-   | Older than `11.0.0` | | | `net6.0` |
-   | Between `11.0.0` and `11.5.1` (inclusive) | `net6.0` | | `net6.0` |
-   | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `Disable` | `net6.0` |
    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` |
-   | `11.6` _and_ newer | `net8.0` | | `net8.0` |
+   | `11.6` _and_ newer | `net8.0` | | `net8.0` | 
 
     Unzip the archive containing extension assemblies to a known location.
 
-    > **Note** If you don't see an asset with a corresponding .NET version, you should always assume that it was compiled for `net6.0`.
+    > **Note** If you don't see an asset with a corresponding .NET version, you should always assume that it was compiled for `net8.0`.
 
 2. **Locate the Universal Orchestrator extensions directory.**
 

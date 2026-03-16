@@ -59,13 +59,25 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         continue;
                     string[] certificateChain = CertificateFormatter.ConvertSecretToCertificateChain(certificateEntry);
 
+                    Dictionary<string, object> secretTags = new Dictionary<string, object>();
+                    try
+                    {
+                        secretTags = client.GetSecretTags(secretName);
+                    }
+                    catch (Exception)
+                    {
+                        hasWarnings = true;
+                        continue;
+                    }
+
                     inventoryItems.Add(new CurrentInventoryItem()
                     {
                         ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                         Alias = secretName.Substring(secretName.LastIndexOf("/") + 1),
                         PrivateKeyEntry = CertificateFormatter.HasPrivateKey(certificateEntry),
                         UseChainLevel = certificateChain.Length > 1,
-                        Certificates = certificateChain
+                        Certificates = certificateChain,
+                        Parameters = secretTags
                     });
                 }
             }
@@ -79,7 +91,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 submitInventory.Invoke(inventoryItems);
 
                 if (hasWarnings)
-                    return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Inventory completed successfully, but one or more secrets were not able to be retrieved.  The secrets that had issues may or may not be valid certificates.  Please check the orchestrator log for more details." };
+                    return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Inventory completed successfully, but one or more secrets and/or tags were not able to be retrieved.  The secrets that had issues may or may not be valid certificates.  Please check the orchestrator log for more details." };
                 else
                     return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
             }
