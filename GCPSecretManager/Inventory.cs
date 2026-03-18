@@ -91,7 +91,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 submitInventory.Invoke(inventoryItems);
 
                 if (hasWarnings)
-                    return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Inventory completed successfully, but one or more secrets and/or tags were not able to be retrieved.  The secrets that had issues may or may not be valid certificates.  Please check the orchestrator log for more details." };
+                    return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Site {config.CertificateStoreDetails.StorePath} on server {config.CertificateStoreDetails.ClientMachine}: Inventory completed successfully, but one or more secrets and/or tags were not able to be retrieved.  Please check the orchestrator log for more details." };
                 else
                     return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
             }

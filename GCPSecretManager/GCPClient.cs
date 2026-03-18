@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.Api.Gax;
+using System.Xml.Linq;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -90,6 +91,35 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             catch (Exception ex)
             {
                 _logger.LogError(GCPException.FlattenExceptionMessages(ex, $"Error retrieving certificate {name}: "));
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return rtnValue;
+        }
+
+        public string GetSecret(string alias)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+            string rtnValue = string.Empty;
+
+            try
+            { 
+                var secret = Client.GetSecret(
+                    new GetSecretRequest()
+                    {
+                        SecretName = SecretName.FromProjectSecret(ProjectId, alias)
+                    }
+                );
+
+                rtnValue = secret.Name;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, $"Error retrieving secret {alias}: "));
                 throw;
             }
             finally
@@ -190,7 +220,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValue;
         }
 
-        public List<TagKeyValue> GetTagKeyValues(TagScope tagScope, string parentId)
+        public List<TagKeyValue> GetTagKeysValues()
         {
             _logger.MethodEntry(LogLevel.Debug);
 
@@ -198,7 +228,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             
             ListTagKeysRequest request = new ListTagKeysRequest()
             {
-                ParentAsResourceName = tagScope == TagScope.Organization ? OrganizationName.FromOrganization(parentId) : ProjectName.FromProject(parentId),
+                ParentAsResourceName = OrganizationName.FromOrganization(GetOrganizationFromProject()),
                 PageSize = 50
             };
 
@@ -216,9 +246,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         foreach (var item in response.TagKeys)
                         {
                             TagKeyValue tagKeyValueItem = new TagKeyValue();
-                            tagKeyValueItem.TagScope = tagScope;
                             tagKeyValueItem.TagKey = item;
-                            tagKeyValueItem.TagValues = GetTagValues(item.Name);
+                            tagKeyValueItem.TagValues = GetTagValues(item.Name.Substring(item.Name.IndexOf("/") + 1));
+
+                            tagKeyValues.Add(tagKeyValueItem);
                         }
                     }
 
@@ -235,23 +266,44 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 _logger.MethodExit(LogLevel.Debug);
             }
 
-            return tagValuePairs;
+            return tagKeyValues;
         }
 
-        public List<TagValue> GetTagKeyValues(string keyName)
+        public List<TagValue> GetTagValues(string tagName)
         {
-            List<TagValue> tagValues = new List<TagValue>();
-            
+            _logger.MethodEntry(LogLevel.Debug);
+
+            List<TagValue> rtnValues = new List<TagValue>();
+
+            ListTagValuesRequest request = new ListTagValuesRequest()
+            {
+                ParentAsResourceName = TagKeyName.FromTagKey(tagName),
+                PageSize = 20
+            };
+
+            ListTagValuesResponse response;
+
             try
             {
-                tagValues = TagValuesClient.ListTagValues(new ListTagValuesRequest()
+                do
                 {
-                    ParentAsResourceName = new UnparsedResourceName(keyName)
-                }).ToList();
+                    response = TagValuesClient.ListTagValues(request).AsRawResponses().FirstOrDefault();
+                    if (response == null)
+                        break;
+                    else
+                    {
+                        foreach (var item in response.TagValues)
+                        {
+                            rtnValues.Add(item);
+                        }
+                    }
+
+                    request.PageToken = response.NextPageToken;
+                } while (!string.IsNullOrEmpty(response.NextPageToken));
             }
             catch (Exception ex)
             {
-                _logger.LogError(GCPException.FlattenExceptionMessages(ex, $"Error Tag Values for {keyName}."));
+                _logger.LogError(GCPException.FlattenExceptionMessages(ex, $"Error retrieving Tag Values for tag {tagName}: "));
                 throw;
             }
             finally
@@ -259,7 +311,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 _logger.MethodExit(LogLevel.Debug);
             }
 
-            return tagValues;
+            return rtnValues;
         }
 
         public Dictionary<string, object> GetSecretTags(string secretResource)
@@ -272,11 +324,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 ParentAsResourceName = new UnparsedResourceName($"//secretmanager.googleapis.com/{secretResource}")
             };
-            
+
             try
             {
                 ListTagBindingsResponse response = TagBindingsClient.ListTagBindings(request).AsRawResponses().FirstOrDefault();
-                foreach(TagBinding x in response.TagBindings)
+                foreach (TagBinding x in response.TagBindings)
                 {
                     TagValue y = TagValuesClient.GetTagValue(x.TagValue);
                     tagPairs.Add(x.Name + ":" + y.Name);
@@ -298,73 +350,40 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValue;
         }
 
-        public List<TagValue> GetTagValues(string tagName)
+        public void SetSecretTag(string alias, string tagValue)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            List<string> rtnValues = new List<string>();
-
-            ListTagValuesRequest request = new ListTagValuesRequest()
-            {
-                ParentAsResourceName = TagKeyName.FromTagKey(tagName),
-                PageSize = 20
-            };
-
-            ListTagValuesResponse response;
-
             try
             {
-                do
+                TagBindingsClient.CreateTagBinding(new CreateTagBindingRequest()
                 {
-                    response = TagValuesClient.ListTagValues(request).AsRawResponses().FirstOrDefault();
-                    if (response == null)
-                        break;
-                    else
+                    TagBinding = new TagBinding()
                     {
-                        foreach (var item in response.TagValues)
-                        {
-                            rtnValues.Add(item.Name);
-                        }
+                        Parent = GetSecret(alias),
+                        TagValue = tagValue
                     }
-
-                    request.PageToken = response.NextPageToken;
-                } while (!string.IsNullOrEmpty(response.NextPageToken));
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error retrieving Tag Values: "));
+                _logger.LogError(ex.Message);
                 throw;
             }
             finally
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
-
-            return rtnValues;
         }
 
         private string GetOrganizationFromProject()
         {
-            _logger.MethodEntry(LogLevel.Debug);
-
             string organization = string.Empty;
 
-            try
-            {
-                Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
-                organization = project.Parent;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(GCPException.FlattenExceptionMessages(ex, "Error retrieving Organization: "));
-                throw;
-            }
-            finally
-            {
-                _logger.MethodExit(LogLevel.Debug);
-            }
+            Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
+            organization = project.Parent;
 
-            return organization;
+            return organization.Substring(organization.IndexOf("/") + 1);
         }
     }
 }
