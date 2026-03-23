@@ -8,14 +8,14 @@ The Google Cloud Platform (GCP) Secret Manager Orchestrator Extension remotely m
 
 For use cases including an encrypted private key, please refer to [Certificate Encryption Details](#certificate-encryption-details) for more information on handling/storing the encryption password for the private key.
 
-This extension also optionally supports the management of secret tags.  **If** the optional Entry Parameter of "tags" exists in the store type definition:
+This extension also optionally supports the management of secret tags.  **If** the optional Entry Parameter of "Tags" exists in the store type definition:
 * Inventory will return all tags assigned to a secert in the comma delimited format of "TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN".  
 * The same format of one-to-many tag key/value pairs ("TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN") can be added to the "Tags" field during the setup of Management-Add jobs to assign tags to the secret **as long as each tag key/value pair is already set up as a valid Organization level tag key/value combination in GCP**.
 
 Additional notes regarding tags:
 * This integration does **not** support Project level tags when adding new certificates (secrets).  Only Organization level tags will be recognized.
 * The Tags field will be ignored when renewing/replacing a certificate since in this scenario the extension is only adding a new secret version and not replacing the entire secret.  Assigning tags is only attempted when adding a completely new certificate (secret).
-* When adding a new secret, any errors attempting to add tags **will not** impact the adding of the secret.  If a Management-Add job successfully adds a new certificate (secret) but fails to assign the tag, the job will be reported back with a status of Warning with detail messages why each tag could not be assigned.  The certificate (secret), however, **will** be added.
+* When adding a new secret, any errors attempting to add tags **will not** impact the adding of the secret.  If a Management-Add job successfully adds a new certificate (secret) but fails to assign the tag, the job will be reported back with a status of Warning along with detailed messages why each tag could not be assigned.  The certificate (secret) itself, however, **will** be added.
 * If multiple tags are provided, and errors occur on some but not others, the successful ones will be assigned to the certificate (secret) and warning messages will be written to the log and job status for the others.
 
 ## Requirements
