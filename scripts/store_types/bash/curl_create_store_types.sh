@@ -117,7 +117,20 @@ create_store_type "GCPScrtMgr" '{
       "IsPAMEligible": false
     }
   ],
-  "EntryParameters": [],
+  "EntryParameters": [
+    {
+      "Name": "tags",
+      "DisplayName": "Tags",
+      "Type": "String",
+      "Description": "One-to-many Organization level tag Key:tag value combinations comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
+    }
+  ],
   "StorePathDescription": "The Project ID of the Google Secret Manager being managed."
 }'
 
