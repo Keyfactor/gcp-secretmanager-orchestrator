@@ -44,7 +44,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     case CertStoreOperationType.Add:
                         bool entryExists = client.Exists(config.JobCertificate.Alias);
                         PerformAdd(config, client, entryExists);
-                        if (config.JobProperties["Tags"] != null && !entryExists)
+                        if (config.JobProperties.ContainsKey("tags") && config.JobProperties["tags"] != null && !entryExists)
                         {
                             string message = string.Empty;
                             bool hasWarnings = SetTags(config, client, out message);
@@ -113,31 +113,36 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             bool hasWarnings = false;
             message = string.Empty;
 
-            List<TagKeyValue> tagKeyValuesToAssign = new List<TagKeyValue>();
             List<TagKeyValue> availableTagKeyValues = client.GetTagKeysValues();
-            List<string> tagKeyValues = config.JobProperties["Tags"].ToString().Split(',').ToList();
-            Dictionary<string, string> newTagKeyValues = tagKeyValues.Select(t => t.Split(':')).ToDictionary(t => t[0], t => t[1]);
 
-            foreach (KeyValuePair<string, string> tagValue in newTagKeyValues)
+            List<(string,string)> newTagKeyValues = config.JobProperties["tags"].ToString()
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(pair => pair.Split(':', 2))
+                .Where(parts => parts.Length == 2)
+                .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
+                .ToList();
+
+
+            foreach ((string,string) tagValue in newTagKeyValues)
             {
-                if (availableTagKeyValues.Exists(t => t.TagKey.ShortName == tagValue.Key && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Value)))
+                if (availableTagKeyValues.Exists(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2)))
                 {
-                    TagKeyValue keyValue = availableTagKeyValues.First(t => t.TagKey.ShortName == tagValue.Key && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Value));
+                    TagKeyValue keyValue = availableTagKeyValues.First(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2));
 
                     try
                     {
-                        client.SetSecretTag(config.JobCertificate.Alias, keyValue.TagValues.Find(t => t.ShortName == tagValue.Value).ShortName);
+                        client.SetSecretTag(config.JobCertificate.Alias, keyValue.TagValues.Find(t => t.ShortName == tagValue.Item2).Name);
                     }
                     catch (Exception ex)
                     {
                         hasWarnings = true;
-                        message += $"Error attempting to add tag key/value pair {tagValue.Key}/{tagValue.Value}: {ex.Message}";
+                        message += $"Error attempting to add tag key/value pair {tagValue.Item1}/{tagValue.Item2}: {ex.Message}";
                     }
                 }
                 else
                 {
                     hasWarnings = true;
-                    message += $"Tag key/value pair {tagValue.Key}/{tagValue.Value} not set up as a valid organization level tag in GCP. Tag will not be assigned. ";
+                    message += $"Tag key/value pair {tagValue.Item1}/{tagValue.Item2} not set up as a valid organization level tag in GCP. Tag will not be assigned. ";
                 }
             }
 

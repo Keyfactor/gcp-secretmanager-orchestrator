@@ -24,6 +24,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         TagValuesClient TagValuesClient { get; set; }
         ProjectsClient ProjectsClient { get; set; }
 
+        private const string ResourcePrefix = "//secretmanager.googleapis.com/";
+
         public GCPClient(string projectId)
         {
             _logger = LogHandler.GetClassLogger(this.GetType());
@@ -32,6 +34,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             TagKeysClient = TagKeysClient.Create();
             TagBindingsClient = TagBindingsClient.Create();
             TagValuesClient = TagValuesClient.Create();
+            ProjectsClient = ProjectsClient.Create();
         }
 
         public List<string> GetSecretNames()
@@ -328,10 +331,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             try
             {
                 ListTagBindingsResponse response = TagBindingsClient.ListTagBindings(request).AsRawResponses().FirstOrDefault();
-                foreach (TagBinding x in response.TagBindings)
+                foreach (TagBinding tagBinding in response.TagBindings)
                 {
-                    TagValue y = TagValuesClient.GetTagValue(x.TagValue);
-                    tagPairs.Add(x.Name + ":" + y.Name);
+                    TagValue tagValue = TagValuesClient.GetTagValue(tagBinding.TagValue);
+                    TagKey tagKey = TagKeysClient.GetTagKey(tagValue.Parent);
+                    tagPairs.Add(tagKey.ShortName + ":" + tagValue.ShortName);
                 }
             }
             catch (Exception ex)
@@ -360,7 +364,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 {
                     TagBinding = new TagBinding()
                     {
-                        Parent = GetSecret(alias),
+                        Parent = $"{ResourcePrefix}{GetSecret(alias)}",
                         TagValue = tagValue
                     }
                 });
