@@ -115,7 +115,7 @@ New-StoreType "GCPScrtMgr" @'
       "Name": "tags",
       "DisplayName": "Tags",
       "Type": "String",
-      "Description": "One-to-many Organization level tag Key:tag value combinations comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
+      "Description": "One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
       "RequiredWhen": {
         "HasPrivateKey": false,
         "OnAdd": false,
