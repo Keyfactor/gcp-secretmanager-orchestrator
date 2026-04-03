@@ -40,28 +40,68 @@
                             "IsPAMEligible": true
                         }
                     },
-                    "Properties": [
-                        {
-                            "Name": "PasswordSecretSuffix",
-                            "DisplayName": "Password Secret Location Suffix",
-                            "Type": "String",
-                            "DependsOn": "",
-                            "DefaultValue": "",
-                            "Required": false,
-                            "IsPAMEligible": false,
-                            "Description": "If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information"
-                        },
-                        {
-                            "Name": "IncludeChain",
-                            "DisplayName": "Include Chain",
-                            "Type": "Bool",
-                            "DependsOn": "",
-                            "DefaultValue": "True",
-                            "Required": false,
-                            "IsPAMEligible": false,
-                            "Description": "Determines whether to include the certificate chain when adding a certificate as a secret."
-                        }
-                    ],
+                  "Properties": [
+                    {
+                      "Name": "PasswordSecretSuffix",
+                      "DisplayName": "Password Secret Location Suffix",
+                      "Type": "String",
+                      "DependsOn": "",
+                      "DefaultValue": "",
+                      "Required": false,
+                      "IsPAMEligible": false,
+                      "Description": "If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information"
+                    },
+                    {
+                      "Name": "IncludeChain",
+                      "DisplayName": "Include Chain",
+                      "Type": "Bool",
+                      "DependsOn": "",
+                      "DefaultValue": "True",
+                      "Required": false,
+                      "IsPAMEligible": false,
+                      "Description": "Determines whether to include the certificate chain when adding a certificate as a secret."
+                    },
+                    {
+                      "Name": "ReplicationRegions",
+                      "DisplayName": "Replication Regions",
+                      "Type": "String",
+                      "DependsOn": "",
+                      "DefaultValue": "",
+                      "Required": false,
+                      "IsPAMEligible": false,
+                      "Description": "An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired."
+                    },
+                    {
+                      "Name": "TtlDuration",
+                      "DisplayName": "TTL Duration",
+                      "Type": "String",
+                      "DependsOn": "",
+                      "DefaultValue": "",
+                      "Required": false,
+                      "IsPAMEligible": false,
+                      "Description": "An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted."
+                    },
+                    {
+                      "Name": "VersionDestroyTtlDuration",
+                      "DisplayName": "Version Destroy TTL Duration",
+                      "Type": "String",
+                      "DependsOn": "",
+                      "DefaultValue": "",
+                      "Required": false,
+                      "IsPAMEligible": false,
+                      "Description": "An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed."
+                    },
+                    {
+                      "Name": "Labels",
+                      "DisplayName": "Labels",
+                      "Type": "String",
+                      "DependsOn": "",
+                      "DefaultValue": "",
+                      "Required": false,
+                      "IsPAMEligible": false,
+                      "Description": "An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN."
+                    }
+                  ],
                   "EntryParameters": [
                     {
                       "Name": "tags",
