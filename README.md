@@ -163,6 +163,10 @@ the Keyfactor Command Portal
    | ---- | ------------ | ---- | --------------------- | -------- | ----------- |
    | PasswordSecretSuffix | Password Secret Location Suffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information | String |  | 🔲 Unchecked |
    | IncludeChain | Include Chain | Determines whether to include the certificate chain when adding a certificate as a secret. | Bool | True | 🔲 Unchecked |
+   | ReplicationRegions | Replication Regions | An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired. | String |  | 🔲 Unchecked |
+   | TtlDuration | TTL Duration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. | String |  | 🔲 Unchecked |
+   | VersionDestroyTtlDuration | Version Destroy TTL Duration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. | String |  | 🔲 Unchecked |
+   | Labels | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. | String |  | 🔲 Unchecked |
 
    The Custom Fields tab should look like this:
 
@@ -182,6 +186,38 @@ the Keyfactor Command Portal
 
    ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-dialog.png)
    ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-validation-options-dialog.png)
+
+
+
+   ###### Replication Regions
+   An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired.
+
+   ![GCPScrtMgr Custom Field - ReplicationRegions](docsource/images/GCPScrtMgr-custom-field-ReplicationRegions-dialog.png)
+   ![GCPScrtMgr Custom Field - ReplicationRegions](docsource/images/GCPScrtMgr-custom-field-ReplicationRegions-validation-options-dialog.png)
+
+
+
+   ###### TTL Duration
+   An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted.
+
+   ![GCPScrtMgr Custom Field - TtlDuration](docsource/images/GCPScrtMgr-custom-field-TtlDuration-dialog.png)
+   ![GCPScrtMgr Custom Field - TtlDuration](docsource/images/GCPScrtMgr-custom-field-TtlDuration-validation-options-dialog.png)
+
+
+
+   ###### Version Destroy TTL Duration
+   An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed.
+
+   ![GCPScrtMgr Custom Field - VersionDestroyTtlDuration](docsource/images/GCPScrtMgr-custom-field-VersionDestroyTtlDuration-dialog.png)
+   ![GCPScrtMgr Custom Field - VersionDestroyTtlDuration](docsource/images/GCPScrtMgr-custom-field-VersionDestroyTtlDuration-validation-options-dialog.png)
+
+
+
+   ###### Labels
+   An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.
+
+   ![GCPScrtMgr Custom Field - Labels](docsource/images/GCPScrtMgr-custom-field-Labels-dialog.png)
+   ![GCPScrtMgr Custom Field - Labels](docsource/images/GCPScrtMgr-custom-field-Labels-validation-options-dialog.png)
 
 
 
@@ -279,6 +315,10 @@ the Keyfactor Command Portal
    | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
    | PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
    | IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
+   | ReplicationRegions | An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired. |
+   | TtlDuration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. |
+   | VersionDestroyTtlDuration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. |
+   | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. |
 
 </details>
 
@@ -307,6 +347,10 @@ the Keyfactor Command Portal
    | Orchestrator | Select an approved orchestrator capable of managing `GCPScrtMgr` certificates. Specifically, one with the `GCPScrtMgr` capability. |
    | Properties.PasswordSecretSuffix | If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
    | Properties.IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
+   | Properties.ReplicationRegions | An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired. |
+   | Properties.TtlDuration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. |
+   | Properties.VersionDestroyTtlDuration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. |
+   | Properties.Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. |
 
 3. **Import the CSV file to create the certificate stores**
 

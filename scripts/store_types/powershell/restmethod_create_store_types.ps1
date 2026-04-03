@@ -108,6 +108,42 @@ New-StoreType "GCPScrtMgr" @'
       "DefaultValue": "True",
       "Required": false,
       "IsPAMEligible": false
+    },
+    {
+      "Name": "ReplicationRegions",
+      "DisplayName": "Replication Regions",
+      "Type": "String",
+      "DependsOn": "",
+      "DefaultValue": "",
+      "Required": false,
+      "IsPAMEligible": false
+    },
+    {
+      "Name": "TtlDuration",
+      "DisplayName": "TTL Duration",
+      "Type": "String",
+      "DependsOn": "",
+      "DefaultValue": "",
+      "Required": false,
+      "IsPAMEligible": false
+    },
+    {
+      "Name": "VersionDestroyTtlDuration",
+      "DisplayName": "Version Destroy TTL Duration",
+      "Type": "String",
+      "DependsOn": "",
+      "DefaultValue": "",
+      "Required": false,
+      "IsPAMEligible": false
+    },
+    {
+      "Name": "Labels",
+      "DisplayName": "Labels",
+      "Type": "String",
+      "DependsOn": "",
+      "DefaultValue": "",
+      "Required": false,
+      "IsPAMEligible": false
     }
   ],
   "EntryParameters": [
