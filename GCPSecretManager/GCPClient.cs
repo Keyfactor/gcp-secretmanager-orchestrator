@@ -80,16 +80,26 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnSecrets;
         }
 
-        public string GetCertificateEntry(string name)
+        public SecretWithLabels GetCertificateEntry(string name)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            string rtnValue;
+            SecretWithLabels rtnValue = new SecretWithLabels();
             
             try
             {
                 AccessSecretVersionResponse version = Client.AccessSecretVersion(new AccessSecretVersionRequest() { Name = name + "/versions/latest" });
-                rtnValue = version.Payload.Data.ToStringUtf8();
+                rtnValue.Secret = version.Payload.Data.ToStringUtf8();
+                rtnValue.Labels = string.Empty;
+
+                Secret secret = GetSecret(name);
+                List<string> labelsString = new List<string>();
+                foreach(var label in secret.Labels)
+                {
+                    labelsString.Add($"{label.Key}:{label.Value}");
+                }
+                if (labelsString.Count > 0)
+                    rtnValue.Labels = string.Join(",", labelsString.ToArray());
             }
             catch (Exception ex)
             {
@@ -104,21 +114,19 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValue;
         }
 
-        public string GetSecret(string alias)
+        public Secret GetSecret(string alias)
         {
             _logger.MethodEntry(LogLevel.Debug);
             string rtnValue = string.Empty;
 
             try
             { 
-                var secret = Client.GetSecret(
+                return Client.GetSecret(
                     new GetSecretRequest()
                     {
                         SecretName = SecretName.FromProjectSecret(ProjectId, alias)
                     }
                 );
-
-                rtnValue = secret.Name;
             }
             catch (Exception ex)
             {
@@ -129,8 +137,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
-
-            return rtnValue;
         }
 
         public void AddSecret(string alias, string secretContent, bool entryExists)
@@ -364,7 +370,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 {
                     TagBinding = new TagBinding()
                     {
-                        Parent = $"{ResourcePrefix}{GetSecret(alias)}",
+                        Parent = $"{ResourcePrefix}{GetSecret(alias).Name}",
                         TagValue = tagValue
                     }
                 });

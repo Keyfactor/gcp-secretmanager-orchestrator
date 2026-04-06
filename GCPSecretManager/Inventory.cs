@@ -44,7 +44,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 List<string> secretNames = client.GetSecretNames();
                 foreach(string secretName in secretNames)
                 {
-                    string certificateEntry = string.Empty;
+                    SecretWithLabels certificateEntry = new SecretWithLabels();
                     try
                     {
                         certificateEntry = client.GetCertificateEntry(secretName);
@@ -55,9 +55,9 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         continue;
                     }
 
-                    if (!CertificateFormatter.IsValid(certificateEntry))
+                    if (!CertificateFormatter.IsValid(certificateEntry.Secret))
                         continue;
-                    string[] certificateChain = CertificateFormatter.ConvertSecretToCertificateChain(certificateEntry);
+                    string[] certificateChain = CertificateFormatter.ConvertSecretToCertificateChain(certificateEntry.Secret);
 
                     Dictionary<string, object> secretTags = new Dictionary<string, object>();
                     try

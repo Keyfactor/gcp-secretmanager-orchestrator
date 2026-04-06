@@ -14,4 +14,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         internal string Region {  get; set; }
         internal string KmsKeyPath { get; set; }
     }
+
+    internal class SecretWithLabels
+    {
+        internal string Secret { get; set; }
+        internal string Labels { get; set; }
+    }
 }
