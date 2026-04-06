@@ -166,7 +166,6 @@ the Keyfactor Command Portal
    | ReplicationRegions | Replication Regions | An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired. | String |  | 🔲 Unchecked |
    | TtlDuration | TTL Duration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. | String |  | 🔲 Unchecked |
    | VersionDestroyTtlDuration | Version Destroy TTL Duration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. | String |  | 🔲 Unchecked |
-   | Labels | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. | String |  | 🔲 Unchecked |
 
    The Custom Fields tab should look like this:
 
@@ -213,21 +212,14 @@ the Keyfactor Command Portal
 
 
 
-   ###### Labels
-   An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.
-
-   ![GCPScrtMgr Custom Field - Labels](docsource/images/GCPScrtMgr-custom-field-Labels-dialog.png)
-   ![GCPScrtMgr Custom Field - Labels](docsource/images/GCPScrtMgr-custom-field-Labels-validation-options-dialog.png)
-
-
-
 
 
    ##### Entry Parameters Tab
 
    | Name | Display Name | Description | Type | Default Value | Entry has a private key | Adding an entry | Removing an entry | Reenrolling an entry |
    | ---- | ------------ | ---- | ------------- | ----------------------- | ---------------- | ----------------- | ------------------- | ----------- |
-   | tags | Tags | One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | tags | Tags | An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | Labels | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
 
    The Entry Parameters tab should look like this:
 
@@ -235,10 +227,17 @@ the Keyfactor Command Portal
 
 
    ##### Tags
-   One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN
+   An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN
 
    ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags.png)
    ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags-validation-options.png)
+
+
+   ##### Labels
+   An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.
+
+   ![GCPScrtMgr Entry Parameter - Labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-Labels.png)
+   ![GCPScrtMgr Entry Parameter - Labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-Labels-validation-options.png)
 
 
 
@@ -318,7 +317,6 @@ the Keyfactor Command Portal
    | ReplicationRegions | An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired. |
    | TtlDuration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. |
    | VersionDestroyTtlDuration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. |
-   | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. |
 
 </details>
 
@@ -350,7 +348,6 @@ the Keyfactor Command Portal
    | Properties.ReplicationRegions | An optional list of valid comma delimited GCP regions to replicate secrets to.  If left blank, GCP default behavior will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired. |
    | Properties.TtlDuration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. |
    | Properties.VersionDestroyTtlDuration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. |
-   | Properties.Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. |
 
 3. **Import the CSV file to create the certificate stores**
 

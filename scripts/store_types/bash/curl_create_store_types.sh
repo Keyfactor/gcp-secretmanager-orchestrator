@@ -142,15 +142,6 @@ create_store_type "GCPScrtMgr" '{
       "DefaultValue": "",
       "Required": false,
       "IsPAMEligible": false
-    },
-    {
-      "Name": "Labels",
-      "DisplayName": "Labels",
-      "Type": "String",
-      "DependsOn": "",
-      "DefaultValue": "",
-      "Required": false,
-      "IsPAMEligible": false
     }
   ],
   "EntryParameters": [
@@ -158,7 +149,19 @@ create_store_type "GCPScrtMgr" '{
       "Name": "tags",
       "DisplayName": "Tags",
       "Type": "String",
-      "Description": "One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
+      "Description": "An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
+    },
+    {
+      "Name": "Labels",
+      "DisplayName": "Labels",
+      "Type": "String",
+      "Description": "An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.",
       "RequiredWhen": {
         "HasPrivateKey": false,
         "OnAdd": false,
