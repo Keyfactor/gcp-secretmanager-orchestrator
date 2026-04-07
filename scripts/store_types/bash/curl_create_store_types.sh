@@ -158,7 +158,7 @@ create_store_type "GCPScrtMgr" '{
       }
     },
     {
-      "Name": "Labels",
+      "Name": "labels",
       "DisplayName": "Labels",
       "Type": "String",
       "Description": "An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.",
