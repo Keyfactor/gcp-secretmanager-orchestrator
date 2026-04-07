@@ -1,16 +1,16 @@
-﻿using Google.Api.Gax.ResourceNames;
-using Google.Cloud.SecretManager.V1;
+﻿using Google.Api.Gax;
+using Google.Api.Gax.ResourceNames;
+using Google.Apis.Requests;
 using Google.Cloud.ResourceManager.V3;
-
-using Microsoft.Extensions.Logging;
-
+using Google.Cloud.SecretManager.V1;
+using Google.Protobuf.Collections;
 using Keyfactor.Logging;
-
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Api.Gax;
 using System.Xml.Linq;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -139,7 +139,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
-        public void AddSecret(string alias, string secretContent, bool entryExists)
+        public void AddSecret(string alias, string secretContent, bool entryExists, string labels = null)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
@@ -151,11 +151,32 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 {
                     AccessSecretVersionRequest request = new AccessSecretVersionRequest();
 
+                    MapField<string, string> labelMap = new MapField<string, string>();
+                    if (labels != null)
+                    {
+                        foreach (string label in labels.Split(','))
+                        {
+                            string[] labelParts = label.Split(':');
+                            labelMap[labelParts[0]] = labelParts[1];
+                        }
+                    }
+
+                    List<(string, string)> labelsList = labels != null ? null :
+                        labels.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(pair => pair.Split(':', 2))
+                        .Where(parts => parts.Length == 2)
+                        .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
+                        .ToList();
+
                     //create secret
                     CreateSecretRequest secretRequest = new CreateSecretRequest();
                     secretRequest.ParentAsProjectName = new ProjectName(ProjectId);
                     secretRequest.SecretId = alias;
-                    secretRequest.Secret = new Secret { Replication = new Replication { Automatic = new Replication.Types.Automatic() } };
+                    secretRequest.Secret = new Secret { 
+                        Replication = new Replication { Automatic = new Replication.Types.Automatic() },
+                    };
+
+                    secretRequest.Secret.Labels.
 
                     Secret secret = Client.CreateSecret(secretRequest);
                 }

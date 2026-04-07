@@ -93,7 +93,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             try
             {
                 string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
-                client.AddSecret(alias, secret, entryExists);
+                string labels = (config.JobProperties.ContainsKey("labels") && config.JobProperties["labels"] != null && !entryExists) ? config.JobProperties["labels"].ToString() : null;
+                client.AddSecret(alias, secret, entryExists, labels);
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
                 {
                     bool passwordEntryExists = client.Exists(alias + PasswordSecretSuffix);
