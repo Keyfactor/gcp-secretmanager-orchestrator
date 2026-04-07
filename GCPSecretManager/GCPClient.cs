@@ -323,10 +323,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValues;
         }
 
-        public Dictionary<string, object> GetSecretTags(string secretResource)
+        public string GetSecretTags(string secretResource)
         {
             _logger.MethodEntry(LogLevel.Debug);
-            Dictionary<string, object> rtnValue = new Dictionary<string, object>();
+            string rtnValue = string.Empty;
             List<string> tagPairs = new List<string>();
 
             ListTagBindingsRequest request = new ListTagBindingsRequest()
@@ -355,7 +355,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
 
             if (tagPairs.Count > 0)
-                rtnValue.Add("tags", string.Join(",", tagPairs));
+                rtnValue = string.Join(",", tagPairs);
 
             return rtnValue;
         }

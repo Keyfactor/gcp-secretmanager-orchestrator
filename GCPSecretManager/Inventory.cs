@@ -59,7 +59,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         continue;
                     string[] certificateChain = CertificateFormatter.ConvertSecretToCertificateChain(certificateEntry.Secret);
 
-                    Dictionary<string, object> secretTags = new Dictionary<string, object>();
+                    string secretTags = string.Empty;
                     try
                     {
                         secretTags = client.GetSecretTags(secretName);
@@ -67,17 +67,22 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     catch (Exception)
                     {
                         hasWarnings = true;
-                        continue;
                     }
+
+                    Dictionary<string, object> entryParameters = new()
+                    {
+                        { "tags", secretTags },
+                        { "labels", certificateEntry.Labels }
+                    };
 
                     inventoryItems.Add(new CurrentInventoryItem()
                     {
                         ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                         Alias = secretName.Substring(secretName.LastIndexOf("/") + 1),
-                        PrivateKeyEntry = CertificateFormatter.HasPrivateKey(certificateEntry),
+                        PrivateKeyEntry = CertificateFormatter.HasPrivateKey(certificateEntry.Secret),
                         UseChainLevel = certificateChain.Length > 1,
                         Certificates = certificateChain,
-                        Parameters = secretTags
+                        Parameters = entryParameters
                     });
                 }
             }
