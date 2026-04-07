@@ -219,7 +219,7 @@ the Keyfactor Command Portal
    | Name | Display Name | Description | Type | Default Value | Entry has a private key | Adding an entry | Removing an entry | Reenrolling an entry |
    | ---- | ------------ | ---- | ------------- | ----------------------- | ---------------- | ----------------- | ------------------- | ----------- |
    | tags | Tags | An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
-   | Labels | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | labels | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
 
    The Entry Parameters tab should look like this:
 
@@ -236,8 +236,8 @@ the Keyfactor Command Portal
    ##### Labels
    An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.
 
-   ![GCPScrtMgr Entry Parameter - Labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-Labels.png)
-   ![GCPScrtMgr Entry Parameter - Labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-Labels-validation-options.png)
+   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels.png)
+   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels-validation-options.png)
 
 
 
