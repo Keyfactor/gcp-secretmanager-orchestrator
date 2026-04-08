@@ -49,6 +49,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     replicationRegion.Region = replicationRegionStringArr[0];
                     if (replicationRegionStringArr.Length > 1)
                         replicationRegion.KmsKeyPath = replicationRegionStringArr[1];
+
+                    ReplicationRegions.Add(replicationRegion);
                 }
             }
 

@@ -1,16 +1,15 @@
 ﻿using Google.Api.Gax;
 using Google.Api.Gax.ResourceNames;
-using Google.Apis.Requests;
 using Google.Cloud.ResourceManager.V3;
 using Google.Cloud.SecretManager.V1;
 using Google.Protobuf.Collections;
+using Google.Protobuf.WellKnownTypes;
 using Keyfactor.Logging;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Xml.Linq;
-using static Org.BouncyCastle.Math.EC.ECCurve;
+using System.Reflection.Metadata;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -139,9 +138,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
-        public void AddSecret(string alias, string secretContent, bool entryExists, string labels = null)
+        public bool AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null)
         {
             _logger.MethodEntry(LogLevel.Debug);
+
+            bool rtnWarning = false;
 
             try
             {
@@ -157,6 +158,12 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         foreach (string label in labels.Split(','))
                         {
                             string[] labelParts = label.Split(':');
+                            if (labelParts.Length != 2)
+                            {
+                                _logger.LogError($"Invalid label format - {label}.  Label ignored.");
+                                rtnWarning = true;
+                                continue;
+                            }
                             labelMap[labelParts[0]] = labelParts[1];
                         }
                     }
@@ -172,11 +179,31 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     CreateSecretRequest secretRequest = new CreateSecretRequest();
                     secretRequest.ParentAsProjectName = new ProjectName(ProjectId);
                     secretRequest.SecretId = alias;
-                    secretRequest.Secret = new Secret { 
-                        Replication = new Replication { Automatic = new Replication.Types.Automatic() },
-                    };
 
-                    secretRequest.Secret.Labels.
+                    secretRequest.Secret = new Secret();
+                    if (ttlDuration.HasValue) secretRequest.Secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
+                    if (versionDestroyTtlDuration.HasValue) secretRequest.Secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
+                    if (replicationRegions == null || replicationRegions.Count == 0)
+                    {
+                        secretRequest.Secret.Replication = new Replication { Automatic = new Replication.Types.Automatic() };
+                    }
+                    else
+                    {
+                        secretRequest.Secret.Replication = new Replication { UserManaged = new Replication.Types.UserManaged() };
+
+                        foreach (ReplicationRegion replicationRegion in replicationRegions)
+                        {
+                            Replication.Types.UserManaged.Types.Replica replica = new Replication.Types.UserManaged.Types.Replica();
+                            replica.Location = replicationRegion.Region;
+                            if (replicationRegion.KmsKeyPath != null)
+                                replica.CustomerManagedEncryption = new CustomerManagedEncryption() { KmsKeyName = replicationRegion.KmsKeyPath };
+
+                            secretRequest.Secret.Replication.UserManaged.Replicas.Add(replica);
+                        }
+                    }
+
+                    foreach (var key in labelMap.Keys)
+                        secretRequest.Secret.Labels[key] = labelMap[key];
 
                     Secret secret = Client.CreateSecret(secretRequest);
                 }
@@ -197,6 +224,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
+
+            return rtnWarning;
         }
 
         public void DeleteCertificate(string name)
