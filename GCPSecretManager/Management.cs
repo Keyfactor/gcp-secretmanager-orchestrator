@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -109,7 +110,22 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
                 string labels = (config.JobProperties.ContainsKey("labels") && config.JobProperties["labels"] != null && !entryExists) ? config.JobProperties["labels"].ToString() : null;
-                client.AddSecret(alias, secret, entryExists, labels, ReplicationRegions, TTLDuration, VersionDestroyTtlDuration);
+
+                int ttlDuration = 0;
+                TimeSpan? ttlDurationTS = null;
+                if (config.JobProperties.ContainsKey("ttlDuration") && config.JobProperties["ttlDuration"] != null && int.TryParse(config.JobProperties["ttlDuration"].ToString(), out ttlDuration))
+                {
+                    ttlDurationTS = TimeSpan.FromDays(ttlDuration);
+                }
+
+                int versionDestroyTtlDuration = 0;
+                TimeSpan? versionDestroyTtlDurationTS = null;
+                if (config.JobProperties.ContainsKey("versionDestroyTtlDuration") && config.JobProperties["versionDestroyTtlDuration"] != null && int.TryParse(config.JobProperties["versionDestroyTtlDuration"].ToString(), out versionDestroyTtlDuration))
+                {
+                    versionDestroyTtlDurationTS = TimeSpan.FromDays(versionDestroyTtlDuration);
+                }
+
+                client.AddSecret(alias, secret, entryExists, labels, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
                 {
                     bool passwordEntryExists = client.Exists(alias + PasswordSecretSuffix);

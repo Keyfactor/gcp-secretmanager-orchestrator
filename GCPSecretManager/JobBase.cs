@@ -19,8 +19,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         internal string PasswordSecretSuffix { get; set; }
         internal bool IncludeChain { get; set; }
         internal List<ReplicationRegion> ReplicationRegions { get; set; }
-        internal TimeSpan TTLDuration { get; set; }
-        internal TimeSpan VersionDestroyTtlDuration { get; set; }
 
 
         internal void Initialize(CertificateStore certificateStoreDetails)
@@ -52,18 +50,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
                     ReplicationRegions.Add(replicationRegion);
                 }
-            }
-
-            int ttlDuration = 0;
-            if (properties.TtlDuration != null && int.TryParse(properties.TtlDuration.Value, out ttlDuration))
-            {
-                TTLDuration = TimeSpan.FromDays(ttlDuration);
-            }
-
-            int versionDestroyTtlDuration = 0;
-            if (properties.VersionDestroyTtlDuration != null && int.TryParse(properties.VersionDestroyTtlDuration.Value, out versionDestroyTtlDuration))
-            {
-                VersionDestroyTtlDuration = TimeSpan.FromDays(versionDestroyTtlDuration);
             }
 
             CertificateFormatter = GetCertificateFormatter();
