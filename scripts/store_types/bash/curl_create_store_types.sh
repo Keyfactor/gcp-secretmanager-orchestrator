@@ -168,6 +168,30 @@ create_store_type "GCPScrtMgr" '{
         "OnRemove": false,
         "OnReenrollment": false
       }
+    },
+    {
+      "Name": "ttlDuration",
+      "DisplayName": "TTL Duration",
+      "Type": "String",
+      "Description": "An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted.",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
+    },
+    {
+      "Name": "versionDestroyTtlDuration",
+      "DisplayName": "Version Destroy TTL Duration",
+      "Type": "String",
+      "Description": "An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed.",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
     }
   ],
   "StorePathDescription": "The Project ID of the Google Secret Manager being managed."
