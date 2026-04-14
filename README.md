@@ -220,6 +220,8 @@ the Keyfactor Command Portal
    | ---- | ------------ | ---- | ------------- | ----------------------- | ---------------- | ----------------- | ------------------- | ----------- |
    | tags | Tags | An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
    | labels | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | ttlDuration | TTL Duration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | versionDestroyTtlDuration | Version Destroy TTL Duration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
 
    The Entry Parameters tab should look like this:
 
@@ -238,6 +240,20 @@ the Keyfactor Command Portal
 
    ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels.png)
    ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels-validation-options.png)
+
+
+   ##### TTL Duration
+   An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted.
+
+   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration.png)
+   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration-validation-options.png)
+
+
+   ##### Version Destroy TTL Duration
+   An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed.
+
+   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration.png)
+   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration-validation-options.png)
 
 
 
