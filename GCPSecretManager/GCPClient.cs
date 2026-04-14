@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
@@ -152,29 +153,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 {
                     AccessSecretVersionRequest request = new AccessSecretVersionRequest();
 
-                    MapField<string, string> labelMap = new MapField<string, string>();
-                    if (labels != null)
-                    {
-                        foreach (string label in labels.Split(','))
-                        {
-                            string[] labelParts = label.Split(':');
-                            if (labelParts.Length != 2)
-                            {
-                                _logger.LogError($"Invalid label format - {label}.  Label ignored.");
-                                rtnWarning = true;
-                                continue;
-                            }
-                            labelMap[labelParts[0]] = labelParts[1];
-                        }
-                    }
-
-                    List<(string, string)> labelsList = labels != null ? null :
-                        labels.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                        .Select(pair => pair.Split(':', 2))
-                        .Where(parts => parts.Length == 2)
-                        .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
-                        .ToList();
-
                     //create secret
                     CreateSecretRequest secretRequest = new CreateSecretRequest();
                     secretRequest.ParentAsProjectName = new ProjectName(ProjectId);
@@ -202,13 +180,15 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         }
                     }
 
-                    foreach (var key in labelMap.Keys)
-                        secretRequest.Secret.Labels[key] = labelMap[key];
+                    AssignLabels(labels, secretRequest.Secret.Labels);
 
                     Secret secret = Client.CreateSecret(secretRequest);
                 }
 
                 //create new version
+                ClearSecretFields(alias, labels != null, ttlDuration.HasValue, versionDestroyTtlDuration.HasValue);
+                UpdateSecretFields(alias, labels, ttlDuration, versionDestroyTtlDuration);
+
                 AddSecretVersionRequest secretVersionRequest = new AddSecretVersionRequest();
                 secretVersionRequest.ParentAsSecretName = secretName;
                 secretVersionRequest.Payload = new SecretPayload { Data = Google.Protobuf.ByteString.CopyFromUtf8(secretContent) };
@@ -436,14 +416,121 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
+        public void ClearSecretFields(string alias, bool clearLabels, bool clearTtl, bool clearVersionDestroyTtl)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            Secret secret = new Secret { SecretName = new SecretName(ProjectId, alias) };
+
+            FieldMask updateMask = new FieldMask();
+            if (clearLabels)
+            {
+                updateMask.Paths.Add("labels");
+                secret.Labels.Clear();
+            }
+
+            if (clearTtl)
+            {
+                updateMask.Paths.Add("ttl");
+                secret.Ttl = null;
+            }
+
+            if (clearVersionDestroyTtl)
+            {
+                updateMask.Paths.Add("version_destroy_ttl");
+                secret.VersionDestroyTtl = null;
+            }
+
+            try
+            {
+                var updatedSecret = Client.UpdateSecret(secret, updateMask);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+        }
+
+        public void UpdateSecretFields(string alias, string labels, TimeSpan? ttlDuration, TimeSpan? versionDestroyTtlDuration)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            Secret secret = new Secret { SecretName = new SecretName(ProjectId, alias) };
+
+            FieldMask updateMask = new FieldMask();
+            if (!string.IsNullOrEmpty(labels))
+            {
+                updateMask.Paths.Add("labels");
+                AssignLabels(labels, secret.Labels);
+            }
+
+            if (ttlDuration.HasValue)
+            {
+                updateMask.Paths.Add("ttl");
+                secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
+            }
+
+            if (versionDestroyTtlDuration.HasValue)
+            {
+                updateMask.Paths.Add("version_destroy_ttl");
+                secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
+            }
+
+            try
+            {
+                var updatedSecret = Client.UpdateSecret(secret, updateMask);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+        }
+
         private string GetOrganizationFromProject()
         {
+            _logger.MethodEntry(LogLevel.Debug);
+
             string organization = string.Empty;
 
-            Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
-            organization = project.Parent;
+            try
+            {
+                Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
+                organization = project.Parent;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
 
             return organization.Substring(organization.IndexOf("/") + 1);
+        }
+
+        private void AssignLabels(string labels, MapField<string, string> labelMap)
+        {
+            List<(string, string)> labelsList = labels != null ? null :
+                labels.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(pair => pair.Split(':', 2))
+                .Where(parts => parts.Length == 2)
+                .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
+                .ToList();
+
+            foreach (var label in labelsList)
+                labelMap[label.Item1] = label.Item2;
         }
     }
 }
