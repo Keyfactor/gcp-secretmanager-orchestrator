@@ -18,7 +18,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         internal string ProjectId { get; set; }
         internal string PasswordSecretSuffix { get; set; }
         internal bool IncludeChain { get; set; }
-        internal List<ReplicationRegion> ReplicationRegions { get; set; }
 
 
         internal void Initialize(CertificateStore certificateStoreDetails)
@@ -35,22 +34,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 PasswordSecretSuffix = properties.PasswordSecretSuffix.Value;
 
             IncludeChain = properties.IncludeChain == null || string.IsNullOrEmpty(properties.IncludeChain.Value) ? true : bool.Parse(properties.IncludeChain.Value);
-
-            if (properties.ReplicationRegions != null)
-            {
-                string property = properties.ReplicationRegions.Value;
-                string[] replicationRegionStrings = property.Split(',');
-                foreach(string replicationRegionString in replicationRegionStrings)
-                {
-                    string[] replicationRegionStringArr = replicationRegionString.Split(":");
-                    ReplicationRegion replicationRegion = new ReplicationRegion();
-                    replicationRegion.Region = replicationRegionStringArr[0];
-                    if (replicationRegionStringArr.Length > 1)
-                        replicationRegion.KmsKeyPath = replicationRegionStringArr[1];
-
-                    ReplicationRegions.Add(replicationRegion);
-                }
-            }
 
             CertificateFormatter = GetCertificateFormatter();
         }

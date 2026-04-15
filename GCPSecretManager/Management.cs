@@ -125,6 +125,23 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     versionDestroyTtlDurationTS = TimeSpan.FromDays(versionDestroyTtlDuration);
                 }
 
+                List<ReplicationRegion> ReplicationRegions = new List<ReplicationRegion>();
+                if (config.JobProperties.ContainsKey("replicationRegions") && config.JobProperties["replicationRegions"] != null)
+                {
+                    string property = config.JobProperties["replicationRegions"].ToString();
+                    string[] replicationRegionStrings = property.Split(',');
+                    foreach (string replicationRegionString in replicationRegionStrings)
+                    {
+                        string[] replicationRegionStringArr = replicationRegionString.Split(":");
+                        ReplicationRegion replicationRegion = new ReplicationRegion();
+                        replicationRegion.Region = replicationRegionStringArr[0];
+                        if (replicationRegionStringArr.Length > 1)
+                            replicationRegion.KmsKeyPath = replicationRegionStringArr[1];
+
+                        ReplicationRegions.Add(replicationRegion);
+                    }
+                }
+
                 client.AddSecret(alias, secret, entryExists, labels, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
                 {
