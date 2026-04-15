@@ -40,7 +40,7 @@ The Google Cloud Platform (GCP) Secret Manager Orchestrator Extension remotely m
 For use cases including an encrypted private key, please refer to [Certificate Encryption Details](#certificate-encryption-details) for more information on handling/storing the encryption password for the private key.
 
 This extension also optionally supports the management of secret tags.  **If** the optional Entry Parameter of "Tags" exists in the store type definition:
-* Inventory will return all tags assigned to a secert in the comma delimited format of "TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN".  
+* Inventory will return all tags assigned to a secret in the comma delimited format of "TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN".  
 * The same format of one-to-many tag key/value pairs ("TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN") can be added to the "Tags" field during the setup of Management-Add jobs to assign tags to the secret **as long as each tag key/value pair is already set up as a valid Organization level tag key/value combination in GCP**.
 
 Additional notes regarding tags:
