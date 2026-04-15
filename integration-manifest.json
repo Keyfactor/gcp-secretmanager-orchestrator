@@ -62,7 +62,20 @@
                             "Description": "Determines whether to include the certificate chain when adding a certificate as a secret."
                         }
                     ],
-                    "EntryParameters": [],
+                  "EntryParameters": [
+                    {
+                      "Name": "tags",
+                      "DisplayName": "Tags",
+                      "Type": "String",
+                      "Description": "One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
+                      "RequiredWhen": {
+                        "HasPrivateKey": false,
+                        "OnAdd": false,
+                        "OnRemove": false,
+                        "OnReenrollment": false
+                      }
+                    }
+                  ],
                     "ClientMachineDescription": "Not used",
                     "StorePathDescription": "The Project ID of the Google Secret Manager being managed."
                 }
