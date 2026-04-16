@@ -75,6 +75,17 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         { "labels", certificateEntry.Labels }
                     };
 
+                    Dictionary<string, object> secretTags = new Dictionary<string, object>();
+                    try
+                    {
+                        secretTags = client.GetSecretTags(secretName);
+                    }
+                    catch (Exception)
+                    {
+                        hasWarnings = true;
+                        continue;
+                    }
+
                     inventoryItems.Add(new CurrentInventoryItem()
                     {
                         ItemStatus = OrchestratorInventoryItemStatus.Unknown,
