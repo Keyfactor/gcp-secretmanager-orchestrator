@@ -40,7 +40,7 @@ The Google Cloud Platform (GCP) Secret Manager Orchestrator Extension remotely m
 For use cases including an encrypted private key, please refer to [Certificate Encryption Details](#certificate-encryption-details) for more information on handling/storing the encryption password for the private key.
 
 This extension also optionally supports the management of secret tags.  **If** the optional Entry Parameter of "Tags" exists in the store type definition:
-* Inventory will return all tags assigned to a secret in the comma delimited format of "TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN".  
+* Inventory will return all tags assigned to a secert in the comma delimited format of "TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN".  
 * The same format of one-to-many tag key/value pairs ("TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN") can be added to the "Tags" field during the setup of Management-Add jobs to assign tags to the secret **as long as each tag key/value pair is already set up as a valid Organization level tag key/value combination in GCP**.
 
 Additional notes regarding tags:
@@ -191,7 +191,11 @@ the Keyfactor Command Portal
 
    | Name | Display Name | Description | Type | Default Value | Entry has a private key | Adding an entry | Removing an entry | Reenrolling an entry |
    | ---- | ------------ | ---- | ------------- | ----------------------- | ---------------- | ----------------- | ------------------- | ----------- |
-   | tags | Tags | One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | tags | Tags | An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | labels | Labels | An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | replicationRegions | Replication Regions | An optional list of valid comma delimited GCP regions to replicate secrets to (user managed replication).  If left blank, GCP default behavior (automatic replication) will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | ttlDuration | TTL Duration | An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
+   | versionDestroyTtlDuration | Version Destroy TTL Duration | An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed. | String |  | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked | 🔲 Unchecked |
 
    The Entry Parameters tab should look like this:
 
@@ -199,10 +203,38 @@ the Keyfactor Command Portal
 
 
    ##### Tags
-   One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN
+   An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN
 
    ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags.png)
    ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags-validation-options.png)
+
+
+   ##### Labels
+   An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.
+
+   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels.png)
+   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels-validation-options.png)
+
+
+   ##### Replication Regions
+   An optional list of valid comma delimited GCP regions to replicate secrets to (user managed replication).  If left blank, GCP default behavior (automatic replication) will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired.
+
+   ![GCPScrtMgr Entry Parameter - replicationRegions](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-replicationRegions.png)
+   ![GCPScrtMgr Entry Parameter - replicationRegions](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-replicationRegions-validation-options.png)
+
+
+   ##### TTL Duration
+   An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted.
+
+   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration.png)
+   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration-validation-options.png)
+
+
+   ##### Version Destroy TTL Duration
+   An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed.
+
+   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration.png)
+   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration-validation-options.png)
 
 
 

@@ -44,7 +44,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 List<string> secretNames = client.GetSecretNames();
                 foreach(string secretName in secretNames)
                 {
-                    string certificateEntry = string.Empty;
+                    SecretWithLabels certificateEntry = new SecretWithLabels();
                     try
                     {
                         certificateEntry = client.GetCertificateEntry(secretName);
@@ -55,9 +55,25 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         continue;
                     }
 
-                    if (!CertificateFormatter.IsValid(certificateEntry))
+                    if (!CertificateFormatter.IsValid(certificateEntry.Secret))
                         continue;
-                    string[] certificateChain = CertificateFormatter.ConvertSecretToCertificateChain(certificateEntry);
+                    string[] certificateChain = CertificateFormatter.ConvertSecretToCertificateChain(certificateEntry.Secret);
+
+                    string secretTags = string.Empty;
+                    try
+                    {
+                        secretTags = client.GetSecretTags(secretName);
+                    }
+                    catch (Exception)
+                    {
+                        hasWarnings = true;
+                    }
+
+                    Dictionary<string, object> entryParameters = new()
+                    {
+                        { "tags", secretTags },
+                        { "labels", certificateEntry.Labels }
+                    };
 
                     Dictionary<string, object> secretTags = new Dictionary<string, object>();
                     try
@@ -74,10 +90,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     {
                         ItemStatus = OrchestratorInventoryItemStatus.Unknown,
                         Alias = secretName.Substring(secretName.LastIndexOf("/") + 1),
-                        PrivateKeyEntry = CertificateFormatter.HasPrivateKey(certificateEntry),
+                        PrivateKeyEntry = CertificateFormatter.HasPrivateKey(certificateEntry.Secret),
                         UseChainLevel = certificateChain.Length > 1,
                         Certificates = certificateChain,
-                        Parameters = secretTags
+                        Parameters = entryParameters
                     });
                 }
             }

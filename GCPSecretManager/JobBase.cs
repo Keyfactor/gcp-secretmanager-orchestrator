@@ -1,8 +1,11 @@
-﻿using Keyfactor.Logging;
+﻿using Google.Protobuf.WellKnownTypes;
+using Keyfactor.Logging;
 using Keyfactor.Orchestrators.Extensions;
 using Keyfactor.Orchestrators.Extensions.Interfaces;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System;
+using System.Collections.Generic;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -15,6 +18,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         internal string ProjectId { get; set; }
         internal string PasswordSecretSuffix { get; set; }
         internal bool IncludeChain { get; set; }
+
 
         internal void Initialize(CertificateStore certificateStoreDetails)
         {
