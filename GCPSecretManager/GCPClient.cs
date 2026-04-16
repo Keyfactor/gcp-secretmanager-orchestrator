@@ -522,15 +522,18 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
         private void AssignLabels(string labels, MapField<string, string> labelMap)
         {
-            List<(string, string)> labelsList = labels != null ? null :
+            List<(string, string)> labelsList = labels == null ? null :
                 labels.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(pair => pair.Split(':', 2))
                 .Where(parts => parts.Length == 2)
                 .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
                 .ToList();
 
-            foreach (var label in labelsList)
-                labelMap[label.Item1] = label.Item2;
+            if (labelsList != null)
+            {
+                foreach (var label in labelsList)
+                    labelMap[label.Item1] = label.Item2;
+            }
         }
     }
 }
