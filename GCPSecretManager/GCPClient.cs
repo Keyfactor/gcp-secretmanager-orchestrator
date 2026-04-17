@@ -92,7 +92,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 rtnValue.Secret = version.Payload.Data.ToStringUtf8();
                 rtnValue.Labels = string.Empty;
 
-                Secret secret = GetSecret(name);
+                Secret secret = GetSecret(name.Substring(name.LastIndexOf("/")+1));
                 List<string> labelsString = new List<string>();
                 foreach(var label in secret.Labels)
                 {
