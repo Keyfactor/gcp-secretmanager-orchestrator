@@ -6,17 +6,13 @@ The Google Cloud Platform (GCP) Secret Manager Orchestrator Extension remotely m
 * PEM encoded certificate and unencrypted or encrypted private key with full certificate chain
 * PEM encoded certificate only
 
-For use cases including an encrypted private key, please refer to [Certificate Encryption Details](#certificate-encryption-details) for more information on handling/storing the encryption password for the private key.
+Additional features:
+* For use cases including an encrypted private key, please refer to [Certificate Encryption Details](#certificate-encryption-details) for more information on handling/storing the encryption password for the private key.
+* For information on Tag Support, please refer to [Tag Support](#tag-support)
+* For information on Label Support, please refer to [Label Support](#label-support)
+* For information on Automatic vs User Managed Replication, please refer to [Region Replication](#region-replication)
+* For information on Secret and Secret Version Retention, please refer to [TTL and TTL Version Retention](#ttl-and-ttl-version-retention)
 
-This extension also optionally supports the management of secret tags.  **If** the optional Entry Parameter of "Tags" exists in the store type definition:
-* Inventory will return all tags assigned to a secret in the comma delimited format of "TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN".  
-* The same format of one-to-many tag key/value pairs ("TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN") can be added to the "Tags" field during the setup of Management-Add jobs to assign tags to the secret **as long as each tag key/value pair is already set up as a valid Organization level tag key/value combination in GCP**.
-
-Additional notes regarding tags:
-* This integration does **not** support Project level tags when adding new certificates (secrets).  Only Organization level tags will be recognized.
-* The Tags field will be ignored when renewing/replacing a certificate since in this scenario the extension is only adding a new secret version and not replacing the entire secret.  Assigning tags is only attempted when adding a completely new certificate (secret).
-* When adding a new secret, any errors attempting to add tags **will not** impact the adding of the secret.  If a Management-Add job successfully adds a new certificate (secret) but fails to assign the tag, the job will be reported back with a status of Warning along with detailed messages why each tag could not be assigned.  The certificate (secret) itself, however, **will** be added.
-* If multiple tags are provided, and errors occur on some but not others, the successful ones will be assigned to the certificate (secret) and warning messages will be written to the log and job status for the others.
 
 ## Requirements
 
@@ -34,3 +30,16 @@ For GCP Secret Manager secrets containing private keys, the GCP Secret Manager O
 3. If no Store Password is set and the Password Secret Location Suffix is either missing or blank, the private key will not be encrypted.
 
 If the Store Password has a value, this will be used to encrypt the private key during a Management Add job.  If no value is set for the Store Password, the one time password that Keyfactor Command generates when triggering a Management-Add job will be used to encrypt the private key and this password will be stored as a secret in GCP Secret Manager with a name of Alias + Password Secret Location Suffix.  For example, if the certificate alias is set as "Alias1" and the Password Secret Location Suffix is set as "_Key", the certificate and encrypted private key will be stored in a secret named "Alias1" and the password for the key encryption will be stored in a secret named "Alias1_Key".  Please note that if using the generated password Keyfactor Command provides and storing the password in Secret Manager, each renewal/replacement of a certificate will encrypt the private key with a new generated password, which will then be stored as a new version of the password secret.
+
+
+##Tag Support
+
+This extension supports the management of secret tags.  **If** the optional Entry Parameter of "Tags" exists in the store type definition:
+* Inventory will return all tags assigned to a secret in the comma delimited format of "TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN".  
+* The same format of one-to-many tag key/value pairs ("TagKey1:TagValue1,TagKey2:TagValue2,...,TagKeyN:TagValueN") can be added to the "Tags" field during the setup of Management-Add jobs to assign tags to the secret **as long as each tag key/value pair is already set up as a valid Organization level tag key/value combination in GCP**.
+
+Additional notes regarding tags:
+* This integration does **not** support Project level tags when adding new certificates (secrets).  Only Organization level tags will be recognized.
+* The Tags field will be ignored when renewing/replacing a certificate since in this scenario the extension is only adding a new secret version and not replacing the entire secret.  Assigning tags is only attempted when adding a completely new certificate (secret).
+* When adding a new secret, any errors attempting to add tags **will not** impact the adding of the secret.  If a Management-Add job successfully adds a new certificate (secret) but fails to assign the tag, the job will be reported back with a status of Warning along with detailed messages why each tag could not be assigned.  The certificate (secret) itself, however, **will** be added.
+* If multiple tags are provided, and errors occur on some but not others, the successful ones will be assigned to the certificate (secret) and warning messages will be written to the log and job status for the others.
