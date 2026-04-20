@@ -109,7 +109,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             try
             {
                 string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
-                string labels = (config.JobProperties.ContainsKey("labels") && config.JobProperties["labels"] != null && !entryExists) ? config.JobProperties["labels"].ToString() : null;
+                string labels = (config.JobProperties.ContainsKey("labels") && config.JobProperties["labels"] != null) ? config.JobProperties["labels"].ToString() : null;
 
                 int ttlDuration = 0;
                 TimeSpan? ttlDurationTS = null;
