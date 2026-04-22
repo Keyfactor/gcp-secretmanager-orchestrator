@@ -1,4 +1,5 @@
 ﻿using Google.Cloud.ResourceManager.V3;
+using Google.Protobuf.WellKnownTypes;
 using System.Collections.Generic;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
@@ -19,5 +20,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
     {
         internal string Secret { get; set; }
         internal string Labels { get; set; }
+        internal Duration TTLDuration { get; set; }
+        internal Duration VersionDestroyTTLDuration { get; set; }
+        internal string ReplicationRegions { get; set; }
     }
 }

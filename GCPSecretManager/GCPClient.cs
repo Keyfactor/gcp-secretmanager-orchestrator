@@ -93,6 +93,24 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 rtnValue.Labels = string.Empty;
 
                 Secret secret = GetSecret(name.Substring(name.LastIndexOf("/")+1));
+                rtnValue.TTLDuration = secret.Ttl;
+                rtnValue.VersionDestroyTTLDuration = secret.VersionDestroyTtl;
+
+
+                if (secret.Replication != null && secret.Replication.UserManaged != null && secret.Replication.UserManaged.Replicas != null && secret.Replication.UserManaged.Replicas.Count > 0)
+                {
+                    foreach (Replication.Types.UserManaged.Types.Replica replica in secret.Replication.UserManaged.Replicas)
+                    {
+                        rtnValue.ReplicationRegions += $",{replica.Location}";
+                        if (replica.CustomerManagedEncryption != null && !string.IsNullOrEmpty(replica.CustomerManagedEncryption.KmsKeyName))
+                        {
+                            rtnValue.ReplicationRegions += $":{replica.CustomerManagedEncryption.KmsKeyName}";
+                        }
+                    }
+
+                    rtnValue.ReplicationRegions = rtnValue.ReplicationRegions.Substring(1);
+                }
+
                 List<string> labelsString = new List<string>();
                 foreach(var label in secret.Labels)
                 {

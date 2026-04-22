@@ -72,7 +72,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     Dictionary<string, object> entryParameters = new()
                     {
                         { "tags", secretTags },
-                        { "labels", certificateEntry.Labels }
+                        { "labels", certificateEntry.Labels },
+                        { "replicationRegions", certificateEntry.ReplicationRegions },
+                        { "ttlDuration", certificateEntry.TTLDuration?.ToTimeSpan().Days.ToString() },
+                        { "versionDestroyTtlDuration", certificateEntry.VersionDestroyTTLDuration?.ToTimeSpan().Days.ToString() }
                     };
 
                     inventoryItems.Add(new CurrentInventoryItem()
