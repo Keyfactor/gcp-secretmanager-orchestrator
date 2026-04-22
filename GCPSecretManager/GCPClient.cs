@@ -23,6 +23,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         TagBindingsClient TagBindingsClient { get; set; }
         TagValuesClient TagValuesClient { get; set; }
         ProjectsClient ProjectsClient { get; set; }
+        FoldersClient FoldersClient { get; set; }
 
         private const string ResourcePrefix = "//secretmanager.googleapis.com/";
 
@@ -35,6 +36,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             TagBindingsClient = TagBindingsClient.Create();
             TagValuesClient = TagValuesClient.Create();
             ProjectsClient = ProjectsClient.Create();
+            FoldersClient = FoldersClient.Create();
         }
 
         public List<string> GetSecretNames()
@@ -518,12 +520,23 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            string organization = string.Empty;
+            string parent = string.Empty;
 
             try
             {
                 Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
-                organization = project.Parent;
+                parent = project.Parent;
+
+                while(string.IsNullOrEmpty(null))
+                {
+                    if (parent.StartsWith("organizations/"))
+                        break;
+
+                    if (!parent.StartsWith("folders/"))
+                        throw new Exception($"Invalid or unknown project parent - {parent}");
+
+                    parent = FoldersClient.GetFolder(parent).Parent;
+                }
             }
             catch (Exception ex)
             {
@@ -535,7 +548,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 _logger.MethodExit(LogLevel.Debug);
             }
 
-            return organization.Substring(organization.IndexOf("/") + 1);
+            return parent.Substring(parent.IndexOf("/") + 1);
         }
 
         private void AssignLabels(string labels, MapField<string, string> labelMap)
