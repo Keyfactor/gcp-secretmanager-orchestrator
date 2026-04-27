@@ -72,19 +72,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     Dictionary<string, object> entryParameters = new()
                     {
                         { "tags", secretTags },
-                        { "labels", certificateEntry.Labels }
+                        { "labels", certificateEntry.Labels },
+                        { "replicationRegions", certificateEntry.ReplicationRegions },
+                        { "ttlDuration", certificateEntry.TTLDuration?.ToTimeSpan().Days.ToString() },
+                        { "versionDestroyTtlDuration", certificateEntry.VersionDestroyTTLDuration?.ToTimeSpan().Days.ToString() }
                     };
-
-                    Dictionary<string, object> secretTags = new Dictionary<string, object>();
-                    try
-                    {
-                        secretTags = client.GetSecretTags(secretName);
-                    }
-                    catch (Exception)
-                    {
-                        hasWarnings = true;
-                        continue;
-                    }
 
                     inventoryItems.Add(new CurrentInventoryItem()
                     {
