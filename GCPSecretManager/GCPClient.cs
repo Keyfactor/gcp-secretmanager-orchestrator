@@ -23,6 +23,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         TagBindingsClient TagBindingsClient { get; set; }
         TagValuesClient TagValuesClient { get; set; }
         ProjectsClient ProjectsClient { get; set; }
+        FoldersClient FoldersClient { get; set; }
 
         private const string ResourcePrefix = "//secretmanager.googleapis.com/";
 
@@ -35,6 +36,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             TagBindingsClient = TagBindingsClient.Create();
             TagValuesClient = TagValuesClient.Create();
             ProjectsClient = ProjectsClient.Create();
+            FoldersClient = FoldersClient.Create();
         }
 
         public List<string> GetSecretNames()
@@ -92,7 +94,25 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 rtnValue.Secret = version.Payload.Data.ToStringUtf8();
                 rtnValue.Labels = string.Empty;
 
-                Secret secret = GetSecret(name);
+                Secret secret = GetSecret(name.Substring(name.LastIndexOf("/")+1));
+                rtnValue.TTLDuration = secret.Ttl;
+                rtnValue.VersionDestroyTTLDuration = secret.VersionDestroyTtl;
+
+
+                if (secret.Replication != null && secret.Replication.UserManaged != null && secret.Replication.UserManaged.Replicas != null && secret.Replication.UserManaged.Replicas.Count > 0)
+                {
+                    foreach (Replication.Types.UserManaged.Types.Replica replica in secret.Replication.UserManaged.Replicas)
+                    {
+                        rtnValue.ReplicationRegions += $",{replica.Location}";
+                        if (replica.CustomerManagedEncryption != null && !string.IsNullOrEmpty(replica.CustomerManagedEncryption.KmsKeyName))
+                        {
+                            rtnValue.ReplicationRegions += $":{replica.CustomerManagedEncryption.KmsKeyName}";
+                        }
+                    }
+
+                    rtnValue.ReplicationRegions = rtnValue.ReplicationRegions.Substring(1);
+                }
+
                 List<string> labelsString = new List<string>();
                 foreach(var label in secret.Labels)
                 {
@@ -500,12 +520,23 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            string organization = string.Empty;
+            string parent = string.Empty;
 
             try
             {
                 Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
-                organization = project.Parent;
+                parent = project.Parent;
+
+                while(string.IsNullOrEmpty(null))
+                {
+                    if (parent.StartsWith("organizations/"))
+                        break;
+
+                    if (!parent.StartsWith("folders/"))
+                        throw new Exception($"Invalid or unknown project parent - {parent}");
+
+                    parent = FoldersClient.GetFolder(parent).Parent;
+                }
             }
             catch (Exception ex)
             {
@@ -517,20 +548,23 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 _logger.MethodExit(LogLevel.Debug);
             }
 
-            return organization.Substring(organization.IndexOf("/") + 1);
+            return parent.Substring(parent.IndexOf("/") + 1);
         }
 
         private void AssignLabels(string labels, MapField<string, string> labelMap)
         {
-            List<(string, string)> labelsList = labels != null ? null :
+            List<(string, string)> labelsList = labels == null ? null :
                 labels.Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(pair => pair.Split(':', 2))
                 .Where(parts => parts.Length == 2)
                 .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
                 .ToList();
 
-            foreach (var label in labelsList)
-                labelMap[label.Item1] = label.Item2;
+            if (labelsList != null)
+            {
+                foreach (var label in labelsList)
+                    labelMap[label.Item1] = label.Item2;
+            }
         }
     }
 }
