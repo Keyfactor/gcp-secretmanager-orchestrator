@@ -115,7 +115,55 @@ New-StoreType "GCPScrtMgr" @'
       "Name": "tags",
       "DisplayName": "Tags",
       "Type": "String",
-      "Description": "One-to-many Organization level tag Key:Value combinations, comma delimited - i.e. tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
+      "Description": "An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
+    },
+    {
+      "Name": "labels",
+      "DisplayName": "Labels",
+      "Type": "String",
+      "Description": "An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
+    },
+    {
+      "Name": "replicationRegions",
+      "DisplayName": "Replication Regions",
+      "Type": "String",
+      "Description": "An optional list of valid comma delimited GCP regions to replicate secrets to (user managed replication).  If left blank, GCP default behavior (automatic replication) will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired.",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
+    },
+    {
+      "Name": "ttlDuration",
+      "DisplayName": "TTL Duration",
+      "Type": "String",
+      "Description": "An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted.",
+      "RequiredWhen": {
+        "HasPrivateKey": false,
+        "OnAdd": false,
+        "OnRemove": false,
+        "OnReenrollment": false
+      }
+    },
+    {
+      "Name": "versionDestroyTtlDuration",
+      "DisplayName": "Version Destroy TTL Duration",
+      "Type": "String",
+      "Description": "An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed.",
       "RequiredWhen": {
         "HasPrivateKey": false,
         "OnAdd": false,

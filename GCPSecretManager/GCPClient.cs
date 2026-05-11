@@ -1,16 +1,16 @@
-﻿using Google.Api.Gax.ResourceNames;
-using Google.Cloud.SecretManager.V1;
+﻿using Google.Api.Gax;
+using Google.Api.Gax.ResourceNames;
 using Google.Cloud.ResourceManager.V3;
-
-using Microsoft.Extensions.Logging;
-
+using Google.Cloud.SecretManager.V1;
+using Google.Protobuf.Collections;
+using Google.Protobuf.WellKnownTypes;
 using Keyfactor.Logging;
-
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Google.Api.Gax;
-using System.Xml.Linq;
+using System.Reflection;
+using System.Reflection.Metadata;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -23,6 +23,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
         TagBindingsClient TagBindingsClient { get; set; }
         TagValuesClient TagValuesClient { get; set; }
         ProjectsClient ProjectsClient { get; set; }
+        FoldersClient FoldersClient { get; set; }
 
         private const string ResourcePrefix = "//secretmanager.googleapis.com/";
 
@@ -35,6 +36,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             TagBindingsClient = TagBindingsClient.Create();
             TagValuesClient = TagValuesClient.Create();
             ProjectsClient = ProjectsClient.Create();
+            FoldersClient = FoldersClient.Create();
         }
 
         public List<string> GetSecretNames()
@@ -80,16 +82,44 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnSecrets;
         }
 
-        public string GetCertificateEntry(string name)
+        public SecretWithLabels GetCertificateEntry(string name)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            string rtnValue;
+            SecretWithLabels rtnValue = new SecretWithLabels();
             
             try
             {
                 AccessSecretVersionResponse version = Client.AccessSecretVersion(new AccessSecretVersionRequest() { Name = name + "/versions/latest" });
-                rtnValue = version.Payload.Data.ToStringUtf8();
+                rtnValue.Secret = version.Payload.Data.ToStringUtf8();
+                rtnValue.Labels = string.Empty;
+
+                Secret secret = GetSecret(name.Substring(name.LastIndexOf("/")+1));
+                rtnValue.TTLDuration = secret.Ttl;
+                rtnValue.VersionDestroyTTLDuration = secret.VersionDestroyTtl;
+
+
+                if (secret.Replication != null && secret.Replication.UserManaged != null && secret.Replication.UserManaged.Replicas != null && secret.Replication.UserManaged.Replicas.Count > 0)
+                {
+                    foreach (Replication.Types.UserManaged.Types.Replica replica in secret.Replication.UserManaged.Replicas)
+                    {
+                        rtnValue.ReplicationRegions += $",{replica.Location}";
+                        if (replica.CustomerManagedEncryption != null && !string.IsNullOrEmpty(replica.CustomerManagedEncryption.KmsKeyName))
+                        {
+                            rtnValue.ReplicationRegions += $":{replica.CustomerManagedEncryption.KmsKeyName}";
+                        }
+                    }
+
+                    rtnValue.ReplicationRegions = rtnValue.ReplicationRegions.Substring(1);
+                }
+
+                List<string> labelsString = new List<string>();
+                foreach(var label in secret.Labels)
+                {
+                    labelsString.Add($"{label.Key}:{label.Value}");
+                }
+                if (labelsString.Count > 0)
+                    rtnValue.Labels = string.Join(",", labelsString.ToArray());
             }
             catch (Exception ex)
             {
@@ -104,21 +134,19 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValue;
         }
 
-        public string GetSecret(string alias)
+        public Secret GetSecret(string alias)
         {
             _logger.MethodEntry(LogLevel.Debug);
             string rtnValue = string.Empty;
 
             try
             { 
-                var secret = Client.GetSecret(
+                return Client.GetSecret(
                     new GetSecretRequest()
                     {
                         SecretName = SecretName.FromProjectSecret(ProjectId, alias)
                     }
                 );
-
-                rtnValue = secret.Name;
             }
             catch (Exception ex)
             {
@@ -129,13 +157,13 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
-
-            return rtnValue;
         }
 
-        public void AddSecret(string alias, string secretContent, bool entryExists)
+        public bool AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null)
         {
             _logger.MethodEntry(LogLevel.Debug);
+
+            bool rtnWarning = false;
 
             try
             {
@@ -149,12 +177,38 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     CreateSecretRequest secretRequest = new CreateSecretRequest();
                     secretRequest.ParentAsProjectName = new ProjectName(ProjectId);
                     secretRequest.SecretId = alias;
-                    secretRequest.Secret = new Secret { Replication = new Replication { Automatic = new Replication.Types.Automatic() } };
+
+                    secretRequest.Secret = new Secret();
+                    if (ttlDuration.HasValue) secretRequest.Secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
+                    if (versionDestroyTtlDuration.HasValue) secretRequest.Secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
+                    if (replicationRegions == null || replicationRegions.Count == 0)
+                    {
+                        secretRequest.Secret.Replication = new Replication { Automatic = new Replication.Types.Automatic() };
+                    }
+                    else
+                    {
+                        secretRequest.Secret.Replication = new Replication { UserManaged = new Replication.Types.UserManaged() };
+
+                        foreach (ReplicationRegion replicationRegion in replicationRegions)
+                        {
+                            Replication.Types.UserManaged.Types.Replica replica = new Replication.Types.UserManaged.Types.Replica();
+                            replica.Location = replicationRegion.Region;
+                            if (replicationRegion.KmsKeyPath != null)
+                                replica.CustomerManagedEncryption = new CustomerManagedEncryption() { KmsKeyName = replicationRegion.KmsKeyPath };
+
+                            secretRequest.Secret.Replication.UserManaged.Replicas.Add(replica);
+                        }
+                    }
+
+                    AssignLabels(labels, secretRequest.Secret.Labels);
 
                     Secret secret = Client.CreateSecret(secretRequest);
                 }
 
                 //create new version
+                ClearSecretFields(alias, labels != null, ttlDuration.HasValue, versionDestroyTtlDuration.HasValue);
+                UpdateSecretFields(alias, labels, ttlDuration, versionDestroyTtlDuration);
+
                 AddSecretVersionRequest secretVersionRequest = new AddSecretVersionRequest();
                 secretVersionRequest.ParentAsSecretName = secretName;
                 secretVersionRequest.Payload = new SecretPayload { Data = Google.Protobuf.ByteString.CopyFromUtf8(secretContent) };
@@ -170,6 +224,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
+
+            return rtnWarning;
         }
 
         public void DeleteCertificate(string name)
@@ -317,10 +373,10 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValues;
         }
 
-        public Dictionary<string, object> GetSecretTags(string secretResource)
+        public string GetSecretTags(string secretResource)
         {
             _logger.MethodEntry(LogLevel.Debug);
-            Dictionary<string, object> rtnValue = new Dictionary<string, object>();
+            string rtnValue = string.Empty;
             List<string> tagPairs = new List<string>();
 
             ListTagBindingsRequest request = new ListTagBindingsRequest()
@@ -349,7 +405,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
 
             if (tagPairs.Count > 0)
-                rtnValue.Add("tags", string.Join(",", tagPairs));
+                rtnValue = string.Join(",", tagPairs);
 
             return rtnValue;
         }
@@ -364,7 +420,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 {
                     TagBinding = new TagBinding()
                     {
-                        Parent = $"{ResourcePrefix}{GetSecret(alias)}",
+                        Parent = $"{ResourcePrefix}{GetSecret(alias).Name}",
                         TagValue = tagValue
                     }
                 });
@@ -380,14 +436,135 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
+        public void ClearSecretFields(string alias, bool clearLabels, bool clearTtl, bool clearVersionDestroyTtl)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            Secret secret = new Secret { SecretName = new SecretName(ProjectId, alias) };
+
+            FieldMask updateMask = new FieldMask();
+            if (clearLabels)
+            {
+                updateMask.Paths.Add("labels");
+                secret.Labels.Clear();
+            }
+
+            if (clearTtl)
+            {
+                updateMask.Paths.Add("ttl");
+                secret.Ttl = null;
+            }
+
+            if (clearVersionDestroyTtl)
+            {
+                updateMask.Paths.Add("version_destroy_ttl");
+                secret.VersionDestroyTtl = null;
+            }
+
+            try
+            {
+                var updatedSecret = Client.UpdateSecret(secret, updateMask);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+        }
+
+        public void UpdateSecretFields(string alias, string labels, TimeSpan? ttlDuration, TimeSpan? versionDestroyTtlDuration)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            Secret secret = new Secret { SecretName = new SecretName(ProjectId, alias) };
+
+            FieldMask updateMask = new FieldMask();
+            if (!string.IsNullOrEmpty(labels))
+            {
+                updateMask.Paths.Add("labels");
+                AssignLabels(labels, secret.Labels);
+            }
+
+            if (ttlDuration.HasValue)
+            {
+                updateMask.Paths.Add("ttl");
+                secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
+            }
+
+            if (versionDestroyTtlDuration.HasValue)
+            {
+                updateMask.Paths.Add("version_destroy_ttl");
+                secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
+            }
+
+            try
+            {
+                var updatedSecret = Client.UpdateSecret(secret, updateMask);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+        }
+
         private string GetOrganizationFromProject()
         {
-            string organization = string.Empty;
+            _logger.MethodEntry(LogLevel.Debug);
 
-            Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
-            organization = project.Parent;
+            string parent = string.Empty;
 
-            return organization.Substring(organization.IndexOf("/") + 1);
+            try
+            {
+                Project project = ProjectsClient.GetProject(new GetProjectRequest() { ProjectName = ProjectName.FromProject(ProjectId) });
+                parent = project.Parent;
+
+                while(string.IsNullOrEmpty(null))
+                {
+                    if (parent.StartsWith("organizations/"))
+                        break;
+
+                    if (!parent.StartsWith("folders/"))
+                        throw new Exception($"Invalid or unknown project parent - {parent}");
+
+                    parent = FoldersClient.GetFolder(parent).Parent;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return parent.Substring(parent.IndexOf("/") + 1);
+        }
+
+        private void AssignLabels(string labels, MapField<string, string> labelMap)
+        {
+            List<(string, string)> labelsList = labels == null ? null :
+                labels.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(pair => pair.Split(':', 2))
+                .Where(parts => parts.Length == 2)
+                .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
+                .ToList();
+
+            if (labelsList != null)
+            {
+                foreach (var label in labelsList)
+                    labelMap[label.Item1] = label.Item2;
+            }
         }
     }
 }
