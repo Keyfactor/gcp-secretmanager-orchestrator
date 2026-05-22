@@ -42,28 +42,39 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 switch (config.OperationType)
                 {
                     case CertStoreOperationType.Add:
+                        string tagsMessage = string.Empty;
+                        string labelsMessage = string.Empty;
                         string message = string.Empty;
 
                         bool entryExists = client.Exists(config.JobCertificate.Alias);
 
-                        bool hasLabelWarnings = PerformAdd(config, client, entryExists);
-                        if (hasLabelWarnings)
-                            message += " one or more labels could not be assigned";
-
                         bool hasTagWarnings = false;
                         if (config.JobProperties.ContainsKey("tags") && config.JobProperties["tags"] != null && !entryExists)
                         {
-                            hasTagWarnings = SetTags(config, client, out message);
+                            hasTagWarnings = SetTags(config, client, out tagsMessage);
                             if (hasTagWarnings)
-                            {
-                                if (hasLabelWarnings)
-                                    message += "and";
-                                message += " one or more errors adding tags occurred";
-                            }
+                                tagsMessage = " one or more errors adding tags occurred: " + tagsMessage;
                         }
-                        
+
+                        bool hasLabelWarnings = PerformAdd(config, client, entryExists);
+                        if (hasLabelWarnings)
+                            labelsMessage = " one or more labels could not be assigned";
+
+                        if (hasTagWarnings && hasLabelWarnings)
+                        {
+                            message = labelsMessage + tagsMessage;
+                        }
+                        else if (hasTagWarnings)
+                        {
+                            message = tagsMessage;
+                        }
+                        else if (hasLabelWarnings)
+                        {
+                            message = labelsMessage;
+                        }
+
                         if (hasLabelWarnings || hasTagWarnings)
-                            return new JobResult() { Result = OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Certificate added successfully, but {message}: {message}" };
+                            return new JobResult() { Result = OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Certificate added successfully, but {message}" };
                         
                         break;
                     case CertStoreOperationType.Remove:
@@ -146,7 +157,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
                 {
                     bool passwordEntryExists = client.Exists(alias + PasswordSecretSuffix);
-                    rtnWithWarnings = client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists);
+                    rtnWithWarnings = client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists, null, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
                 }
             }
             catch { throw; }
