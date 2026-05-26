@@ -5,12 +5,15 @@ using Google.Cloud.SecretManager.V1;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Keyfactor.Logging;
+using Keyfactor.Orchestrators.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
+using System.Web;
+using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -159,7 +162,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
-        public bool AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null)
+        public bool AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null, string tags = null)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
@@ -203,6 +206,14 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     AssignLabels(labels, secretRequest.Secret.Labels);
 
                     Secret secret = Client.CreateSecret(secretRequest);
+                }
+
+                bool hasTagWarnings = false;
+                if (!string.IsNullOrEmpty(tags))
+                {
+                    hasTagWarnings = SetTags(config, client, out tagsMessage);
+                    if (hasTagWarnings)
+                        tagsMessage = " one or more errors adding tags occurred: " + tagsMessage;
                 }
 
                 //create new version
@@ -514,6 +525,49 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
+        }
+        private bool SetTags(string alias, string tags, out string message)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            bool hasWarnings = false;
+            message = string.Empty;
+
+            List<TagKeyValue> availableTagKeyValues = GetTagKeysValues();
+
+            List<(string, string)> newTagKeyValues = tags
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(pair => pair.Split(':', 2))
+                .Where(parts => parts.Length == 2)
+                .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
+                .ToList();
+
+            foreach ((string, string) tagValue in newTagKeyValues)
+            {
+                if (availableTagKeyValues.Exists(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2)))
+                {
+                    TagKeyValue keyValue = availableTagKeyValues.First(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2));
+
+                    try
+                    {
+                        SetSecretTag(alias, keyValue.TagValues.Find(t => t.ShortName == tagValue.Item2).Name);
+                    }
+                    catch (Exception ex)
+                    {
+                        hasWarnings = true;
+                        message += $"Error attempting to add tag key/value pair {tagValue.Item1}/{tagValue.Item2}: {ex.Message}";
+                    }
+                }
+                else
+                {
+                    hasWarnings = true;
+                    message += $"Tag key/value pair {tagValue.Item1}/{tagValue.Item2} not set up as a valid organization level tag in GCP. Tag will not be assigned. ";
+                }
+            }
+
+            _logger.MethodExit(LogLevel.Debug);
+
+            return hasWarnings;
         }
 
         private string GetOrganizationFromProject()
