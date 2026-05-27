@@ -162,11 +162,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
-        public bool AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null, string tags = null)
+        public string AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null, string tags = null)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            bool rtnWarning = false;
+            string rtnWarnings = string.Empty;
 
             try
             {
@@ -182,8 +182,8 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     secretRequest.SecretId = alias;
 
                     secretRequest.Secret = new Secret();
-                    if (ttlDuration.HasValue) secretRequest.Secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
-                    if (versionDestroyTtlDuration.HasValue) secretRequest.Secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
+                    //if (ttlDuration.HasValue) secretRequest.Secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
+                    //if (versionDestroyTtlDuration.HasValue) secretRequest.Secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
                     if (replicationRegions == null || replicationRegions.Count == 0)
                     {
                         secretRequest.Secret.Replication = new Replication { Automatic = new Replication.Types.Automatic() };
@@ -203,22 +203,23 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         }
                     }
 
-                    AssignLabels(labels, secretRequest.Secret.Labels);
-
                     Secret secret = Client.CreateSecret(secretRequest);
                 }
 
-                bool hasTagWarnings = false;
-                if (!string.IsNullOrEmpty(tags))
+                string tagsMessage = string.Empty;
+                if (!string.IsNullOrEmpty(tags) && !entryExists)
                 {
-                    hasTagWarnings = SetTags(config, client, out tagsMessage);
-                    if (hasTagWarnings)
-                        tagsMessage = " one or more errors adding tags occurred: " + tagsMessage;
+                    tagsMessage = SetTags(alias, tags);
                 }
 
                 //create new version
                 ClearSecretFields(alias, labels != null, ttlDuration.HasValue, versionDestroyTtlDuration.HasValue);
-                UpdateSecretFields(alias, labels, ttlDuration, versionDestroyTtlDuration);
+                string secretFieldsMessage = UpdateSecretFields(alias, labels, ttlDuration, versionDestroyTtlDuration);
+
+                if (!string.IsNullOrEmpty(tagsMessage) || !string.IsNullOrEmpty(secretFieldsMessage))
+                {
+                    rtnWarnings = $" one or more errors occurred adding tags, labels, ttl duration, and/or ttl version destroy duration {secretFieldsMessage}, {tagsMessage}.";
+                }
 
                 AddSecretVersionRequest secretVersionRequest = new AddSecretVersionRequest();
                 secretVersionRequest.ParentAsSecretName = secretName;
@@ -236,7 +237,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 _logger.MethodExit(LogLevel.Debug);
             }
 
-            return rtnWarning;
+            return rtnWarnings;
         }
 
         public void DeleteCertificate(string name)
@@ -487,9 +488,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
-        public void UpdateSecretFields(string alias, string labels, TimeSpan? ttlDuration, TimeSpan? versionDestroyTtlDuration)
+        public string UpdateSecretFields(string alias, string labels, TimeSpan? ttlDuration, TimeSpan? versionDestroyTtlDuration)
         {
             _logger.MethodEntry(LogLevel.Debug);
+
+            string rtnMessages = string.Empty;
 
             Secret secret = new Secret { SecretName = new SecretName(ProjectId, alias) };
 
@@ -519,19 +522,21 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                throw;
+                rtnMessages = ex.Message;
             }
             finally
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
+
+            return rtnMessages;
         }
-        private bool SetTags(string alias, string tags, out string message)
+
+        private string SetTags(string alias, string tags)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            bool hasWarnings = false;
-            message = string.Empty;
+            string rtnMessages = string.Empty;
 
             List<TagKeyValue> availableTagKeyValues = GetTagKeysValues();
 
@@ -554,20 +559,18 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     }
                     catch (Exception ex)
                     {
-                        hasWarnings = true;
-                        message += $"Error attempting to add tag key/value pair {tagValue.Item1}/{tagValue.Item2}: {ex.Message}";
+                        rtnMessages += $"Error attempting to add tag key/value pair {tagValue.Item1}/{tagValue.Item2}: {ex.Message}";
                     }
                 }
                 else
                 {
-                    hasWarnings = true;
-                    message += $"Tag key/value pair {tagValue.Item1}/{tagValue.Item2} not set up as a valid organization level tag in GCP. Tag will not be assigned. ";
+                    rtnMessages += $"Tag key/value pair {tagValue.Item1}/{tagValue.Item2} not set up as a valid organization level tag in GCP. Tag will not be assigned. ";
                 }
             }
 
             _logger.MethodExit(LogLevel.Debug);
 
-            return hasWarnings;
+            return rtnMessages;
         }
 
         private string GetOrganizationFromProject()

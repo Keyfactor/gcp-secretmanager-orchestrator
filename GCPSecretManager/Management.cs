@@ -48,24 +48,9 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
                         bool entryExists = client.Exists(config.JobCertificate.Alias);
 
-                        bool hasLabelWarnings = PerformAdd(config, client, entryExists);
-                        if (hasLabelWarnings)
-                            labelsMessage = " one or more labels could not be assigned";
+                        string warningMessages = PerformAdd(config, client, entryExists);
 
-                        if (hasTagWarnings && hasLabelWarnings)
-                        {
-                            message = labelsMessage + tagsMessage;
-                        }
-                        else if (hasTagWarnings)
-                        {
-                            message = tagsMessage;
-                        }
-                        else if (hasLabelWarnings)
-                        {
-                            message = labelsMessage;
-                        }
-
-                        if (hasLabelWarnings || hasTagWarnings)
+                        if (!string.IsNullOrEmpty(warningMessages))
                             return new JobResult() { Result = OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Certificate added successfully, but {message}" };
                         
                         break;
@@ -84,11 +69,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
         }
 
-        private bool PerformAdd(ManagementJobConfiguration config, GCPClient client, bool entryExists)
+        private string PerformAdd(ManagementJobConfiguration config, GCPClient client, bool entryExists)
         {
             Logger.MethodEntry(LogLevel.Debug);
 
-            bool rtnWithWarnings = false;
+            string rtnWarnings = string.Empty;
 
             string alias = config.JobCertificate.Alias;
             string newPassword = string.Empty;
@@ -113,6 +98,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
                 string labels = (config.JobProperties.ContainsKey("labels") && config.JobProperties["labels"] != null) ? config.JobProperties["labels"].ToString() : null;
+                string tags = (config.JobProperties.ContainsKey("tags") && config.JobProperties["tags"] != null) ? config.JobProperties["tags"].ToString() : null;
 
                 int ttlDuration = 0;
                 TimeSpan? ttlDurationTS = null;
@@ -145,20 +131,19 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     }
                 }
 
-                client.AddSecret(alias, secret, entryExists, labels, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
+                rtnWarnings = client.AddSecret(alias, secret, entryExists, labels, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS, tags);
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
                 {
                     bool passwordEntryExists = client.Exists(alias + PasswordSecretSuffix);
-                    rtnWithWarnings = client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists, null, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
+                    client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists, null, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
                 }
             }
-            catch { throw; }
             finally
             {
                 Logger.MethodExit(LogLevel.Debug);
             }
 
-            return rtnWithWarnings;
+            return rtnWarnings;
         }
     }
 }
