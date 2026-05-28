@@ -44,14 +44,13 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     case CertStoreOperationType.Add:
                         string tagsMessage = string.Empty;
                         string labelsMessage = string.Empty;
-                        string message = string.Empty;
 
                         bool entryExists = client.Exists(config.JobCertificate.Alias);
 
                         string warningMessages = PerformAdd(config, client, entryExists);
 
                         if (!string.IsNullOrEmpty(warningMessages))
-                            return new JobResult() { Result = OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Certificate added successfully, but {message}" };
+                            return new JobResult() { Result = OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Certificate added successfully, but {warningMessages}" };
                         
                         break;
                     case CertStoreOperationType.Remove:
