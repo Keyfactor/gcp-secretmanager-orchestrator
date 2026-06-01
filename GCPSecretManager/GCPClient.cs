@@ -182,8 +182,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     secretRequest.SecretId = alias;
 
                     secretRequest.Secret = new Secret();
-                    //if (ttlDuration.HasValue) secretRequest.Secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
-                    //if (versionDestroyTtlDuration.HasValue) secretRequest.Secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
                     if (replicationRegions == null || replicationRegions.Count == 0)
                     {
                         secretRequest.Secret.Replication = new Replication { Automatic = new Replication.Types.Automatic() };
