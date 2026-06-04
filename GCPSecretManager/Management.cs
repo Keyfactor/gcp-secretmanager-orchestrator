@@ -134,7 +134,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
                 {
                     bool passwordEntryExists = client.Exists(alias + PasswordSecretSuffix);
-                    client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists, null, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
+                    client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists, null, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS, tags);
                 }
             }
             finally

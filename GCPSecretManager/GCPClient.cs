@@ -2,18 +2,14 @@
 using Google.Api.Gax.ResourceNames;
 using Google.Cloud.ResourceManager.V3;
 using Google.Cloud.SecretManager.V1;
+using Google.LongRunning;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Keyfactor.Logging;
-using Keyfactor.Orchestrators.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata;
-using System.Web;
-using static Org.BouncyCastle.Math.EC.ECCurve;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -426,7 +422,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
             try
             {
-                TagBindingsClient.CreateTagBinding(new CreateTagBindingRequest()
+                Operation<TagBinding, CreateTagBindingMetadata> tagOperation = TagBindingsClient.CreateTagBinding(new CreateTagBindingRequest()
                 {
                     TagBinding = new TagBinding()
                     {
@@ -434,6 +430,12 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         TagValue = tagValue
                     }
                 });
+
+                tagOperation = tagOperation.PollUntilCompleted();
+                if (tagOperation.IsFaulted)
+                {
+                    throw (tagOperation.Exception);
+                };
             }
             catch (Exception ex)
             {
