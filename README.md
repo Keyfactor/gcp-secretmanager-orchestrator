@@ -44,13 +44,12 @@ Additional features:
 * For information on Automatic vs User Managed Replication, please refer to [Region Replication](#region-replication)
 * For information on Secret and Secret Version Retention, please refer to [TTL and TTL Version Retention](#ttl-and-ttl-version-retention)
 
-
-
 ## Compatibility
 
 This integration is compatible with Keyfactor Universal Orchestrator version 10.4 and later.
 
 ## Support
+
 The GCP Secret Manager Universal Orchestrator extension is supported by Keyfactor. If you require support for any issues or have feature request, please open a support ticket by either contacting your Keyfactor representative or via the Keyfactor Support Portal at https://support.keyfactor.com.
 
 > If you want to contribute bug fixes or additional enhancements, use the **[Pull requests](../../pulls)** tab.
@@ -58,7 +57,6 @@ The GCP Secret Manager Universal Orchestrator extension is supported by Keyfacto
 ## Requirements & Prerequisites
 
 Before installing the GCP Secret Manager Universal Orchestrator extension, we recommend that you install [kfutil](https://github.com/Keyfactor/kfutil). Kfutil is a command-line tool that simplifies the process of creating store types, installing extensions, and instantiating certificate stores in Keyfactor Command.
-
 
 The GCP Secret Manager Orchestrator Extension uses Google Application Default Credentials (ADC) for authentication.  Testing of this orchestrator extension was performed using a service account, but please review [Google Application Default Credentials](https://cloud.google.com/docs/authentication/application-default-credentials) for more information on the various ways authentication can be set up.
 
@@ -68,33 +66,28 @@ The GCP project and account being used to access Secret Manager must have access
 * Folder Viewer (if assigning tags to secrets AND the project assigned for this certificate store has a folder as a direct parent)
 * Cloud KMS CryptoKey Encrypter/Decrypter (If assigning KMS Paths to regions when adding secrets using user managed replication)
 
-
 ## GCPScrtMgr Certificate Store Type
 
 To use the GCP Secret Manager Universal Orchestrator extension, you **must** create the GCPScrtMgr Certificate Store Type. This only needs to happen _once_ per Keyfactor Command instance.
 
 
 
-
-
-
-
-
 #### Supported Operations
 
-| Operation    | Is Supported                                                                                                           |
-|--------------|------------------------------------------------------------------------------------------------------------------------|
-| Add          | ✅ Checked        |
-| Remove       | ✅ Checked     |
-| Discovery    | 🔲 Unchecked  |
+| Operation    | Is Supported |
+|--------------|--------------|
+| Add          | ✅ Checked |
+| Remove       | ✅ Checked |
+| Discovery    | 🔲 Unchecked |
 | Reenrollment | 🔲 Unchecked |
-| Create       | 🔲 Unchecked     |
+| Create       | 🔲 Unchecked |
 
 #### Store Type Creation
 
 ##### Using kfutil:
 `kfutil` is a custom CLI for the Keyfactor Command API and can be used to create certificate store types.
 For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out the [docs](https://github.com/Keyfactor/kfutil?tab=readme-ov-file#quickstart)
+
    <details><summary>Click to expand GCPScrtMgr kfutil details</summary>
 
    ##### Using online definition from GitHub:
@@ -113,10 +106,10 @@ For more information on [kfutil](https://github.com/Keyfactor/kfutil) check out 
    ```
    </details>
 
-
 #### Manual Creation
 Below are instructions on how to create the GCPScrtMgr store type manually in
 the Keyfactor Command Portal
+
    <details><summary>Click to expand manual GCPScrtMgr details</summary>
 
    Create a store type called `GCPScrtMgr` with the attributes in the tables below:
@@ -127,11 +120,11 @@ the Keyfactor Command Portal
    | Name | GCPScrtMgr | Display name for the store type (may be customized) |
    | Short Name | GCPScrtMgr | Short display name for the store type |
    | Capability | GCPScrtMgr | Store type name orchestrator will register with. Check the box to allow entry of value |
-   | Supports Add | ✅ Checked | Check the box. Indicates that the Store Type supports Management Add |
-   | Supports Remove | ✅ Checked | Check the box. Indicates that the Store Type supports Management Remove |
-   | Supports Discovery | 🔲 Unchecked |  Indicates that the Store Type supports Discovery |
-   | Supports Reenrollment | 🔲 Unchecked |  Indicates that the Store Type supports Reenrollment |
-   | Supports Create | 🔲 Unchecked |  Indicates that the Store Type supports store creation |
+   | Supports Add | ✅ Checked | Indicates that the Store Type supports Management Add |
+   | Supports Remove | ✅ Checked | Indicates that the Store Type supports Management Remove |
+   | Supports Discovery | 🔲 Unchecked | Indicates that the Store Type supports Discovery |
+   | Supports Reenrollment | 🔲 Unchecked | Indicates that the Store Type supports Reenrollment |
+   | Supports Create | 🔲 Unchecked | Indicates that the Store Type supports store creation |
    | Needs Server | 🔲 Unchecked | Determines if a target server name is required when creating store |
    | Blueprint Allowed | ✅ Checked | Determines if store type may be included in an Orchestrator blueprint |
    | Uses PowerShell | 🔲 Unchecked | Determines if underlying implementation is PowerShell |
@@ -140,18 +133,18 @@ the Keyfactor Command Portal
 
    The Basic tab should look like this:
 
-   ![GCPScrtMgr Basic Tab](docsource/images/GCPScrtMgr-basic-store-type-dialog.png)
+   ![GCPScrtMgr Basic Tab](docsource/images/GCPScrtMgr-basic-store-type-dialog.svg)
 
    ##### Advanced Tab
    | Attribute | Value | Description |
    | --------- | ----- | ----- |
    | Supports Custom Alias | Required | Determines if an individual entry within a store can have a custom Alias. |
-   | Private Key Handling | Optional | This determines if Keyfactor can send the private key associated with a certificate to the store. Required because IIS certificates without private keys would be invalid. |
+   | Private Key Handling | Optional | This determines if Keyfactor can send the private key associated with a certificate to the store. |
    | PFX Password Style | Default | 'Default' - PFX password is randomly generated, 'Custom' - PFX password may be specified when the enrollment job is created (Requires the Allow Custom Password application setting to be enabled.) |
 
    The Advanced tab should look like this:
 
-   ![GCPScrtMgr Advanced Tab](docsource/images/GCPScrtMgr-advanced-store-type-dialog.png)
+   ![GCPScrtMgr Advanced Tab](docsource/images/GCPScrtMgr-advanced-store-type-dialog.svg)
 
    > For Keyfactor **Command versions 24.4 and later**, a Certificate Format dropdown is available with PFX and PEM options. Ensure that **PFX** is selected, as this determines the format of new and renewed certificates sent to the Orchestrator during a Management job. Currently, all Keyfactor-supported Orchestrator extensions support only PFX.
 
@@ -165,25 +158,20 @@ the Keyfactor Command Portal
 
    The Custom Fields tab should look like this:
 
-   ![GCPScrtMgr Custom Fields Tab](docsource/images/GCPScrtMgr-custom-fields-store-type-dialog.png)
-
+   ![GCPScrtMgr Custom Fields Tab](docsource/images/GCPScrtMgr-custom-fields-store-type-dialog.svg)
 
    ###### Password Secret Location Suffix
    If storing a certificate with an encrypted private key, this is the suffix to add to the certificate (secret) alias name where the encrypted private key password will be stored.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information
 
-   ![GCPScrtMgr Custom Field - PasswordSecretSuffix](docsource/images/GCPScrtMgr-custom-field-PasswordSecretSuffix-dialog.png)
-   ![GCPScrtMgr Custom Field - PasswordSecretSuffix](docsource/images/GCPScrtMgr-custom-field-PasswordSecretSuffix-validation-options-dialog.png)
-
+   ![GCPScrtMgr Custom Field - PasswordSecretSuffix](docsource/images/GCPScrtMgr-custom-field-PasswordSecretSuffix-dialog.svg)
+   ![GCPScrtMgr Custom Field - PasswordSecretSuffix](docsource/images/GCPScrtMgr-custom-field-PasswordSecretSuffix-validation-options-dialog.svg)
 
 
    ###### Include Chain
    Determines whether to include the certificate chain when adding a certificate as a secret.
 
-   ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-dialog.png)
-   ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-validation-options-dialog.png)
-
-
-
+   ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-dialog.svg)
+   ![GCPScrtMgr Custom Field - IncludeChain](docsource/images/GCPScrtMgr-custom-field-IncludeChain-validation-options-dialog.svg)
 
 
    ##### Entry Parameters Tab
@@ -198,43 +186,40 @@ the Keyfactor Command Portal
 
    The Entry Parameters tab should look like this:
 
-   ![GCPScrtMgr Entry Parameters Tab](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog.png)
-
-
+   ![GCPScrtMgr Entry Parameters Tab](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog.svg)
    ##### Tags
    An optional list of one-to-many comma delimited Organization level tag Key:Value combinations.  Values should be entered as tagKey1:tagVal1,tagKey2:tagVal2,...tagKeyN:tagValN
 
-   ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags.png)
-   ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags-validation-options.png)
+   ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags.svg)
+   ![GCPScrtMgr Entry Parameter - tags](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-tags-validation-options.svg)
 
 
    ##### Labels
    An optional list of one-to-many comma delimited label key:value pairs to assign to the secret.  Values should be entered as key1:value1,key2:value2,...,keyN:valueN.
 
-   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels.png)
-   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels-validation-options.png)
+   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels.svg)
+   ![GCPScrtMgr Entry Parameter - labels](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-labels-validation-options.svg)
 
 
    ##### Replication Regions
    An optional list of valid comma delimited GCP regions to replicate secrets to (user managed replication).  If left blank, GCP default behavior (automatic replication) will be executed.  Values can also be entered as region1:path1,region2:path2,...,regionN:pathN if providing a kmsKeyName path for each region is desired.
 
-   ![GCPScrtMgr Entry Parameter - replicationRegions](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-replicationRegions.png)
-   ![GCPScrtMgr Entry Parameter - replicationRegions](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-replicationRegions-validation-options.png)
+   ![GCPScrtMgr Entry Parameter - replicationRegions](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-replicationRegions.svg)
+   ![GCPScrtMgr Entry Parameter - replicationRegions](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-replicationRegions-validation-options.svg)
 
 
    ##### TTL Duration
    An optional number of days to provide after which a secret will be deleted.  If not provided, secret will stay around until explicitly deleted.
 
-   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration.png)
-   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration-validation-options.png)
+   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration.svg)
+   ![GCPScrtMgr Entry Parameter - ttlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-ttlDuration-validation-options.svg)
 
 
    ##### Version Destroy TTL Duration
    An optional number of days to provide after a secret is destroyed that its versions will stay around.  If not provided, versions will be permanently destroyed when the secret is destroyed.
 
-   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration.png)
-   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration-validation-options.png)
-
+   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration.svg)
+   ![GCPScrtMgr Entry Parameter - versionDestroyTtlDuration](docsource/images/GCPScrtMgr-entry-parameters-store-type-dialog-versionDestroyTtlDuration-validation-options.svg)
 
 
    </details>
@@ -243,12 +228,12 @@ the Keyfactor Command Portal
 
 1. **Download the latest GCP Secret Manager Universal Orchestrator extension from GitHub.**
 
-    Navigate to the [GCP Secret Manager Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/gcp-secretmanager-orchestrator/releases/latest). Refer to the compatibility matrix below to determine the asset should be downloaded. Then, click the corresponding asset to download the zip archive.
+    Navigate to the [GCP Secret Manager Universal Orchestrator extension GitHub version page](https://github.com/Keyfactor/gcp-secretmanager-orchestrator/releases/latest). Refer to the compatibility matrix below to determine which asset should be downloaded. Then, click the corresponding asset to download the zip archive.
 
    | Universal Orchestrator Version | Latest .NET version installed on the Universal Orchestrator server | `rollForward` condition in `Orchestrator.runtimeconfig.json` | `gcp-secretmanager-orchestrator` .NET version to download |
    | --------- | ----------- | ----------- | ----------- |
    | Between `11.0.0` and `11.5.1` (inclusive) | `net8.0` | `LatestMajor` | `net8.0` |
-   | `11.6` _and_ newer | `net8.0` | | `net8.0` | 
+   | `11.6` _and_ newer | `net8.0` | | `net8.0` |
 
     Unzip the archive containing extension assemblies to a known location.
 
@@ -270,21 +255,15 @@ the Keyfactor Command Portal
 
     Refer to [Starting/Restarting the Universal Orchestrator service](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/StarttheService.htm).
 
-
 6. **(optional) PAM Integration**
 
     The GCP Secret Manager Universal Orchestrator extension is compatible with all supported Keyfactor PAM extensions to resolve PAM-eligible secrets. PAM extensions running on Universal Orchestrators enable secure retrieval of secrets from a connected PAM provider.
 
     To configure a PAM provider, [reference the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam) to select an extension and follow the associated instructions to install it on the Universal Orchestrator (remote).
 
-
 > The above installation steps can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/InstallingAgents/NetCoreOrchestrator/CustomExtensions.htm?Highlight=extensions).
 
-
-
 ## Defining Certificate Stores
-
-
 
 ### Store Creation
 
@@ -300,8 +279,8 @@ the Keyfactor Command Portal
 
     Click the Add button to add a new Certificate Store. Use the table below to populate the **Attributes** in the **Add** form.
 
-   | Attribute | Description                                             |
-   | --------- |---------------------------------------------------------|
+   | Attribute | Description |
+   | --------- | ----------- |
    | Category | Select "GCPScrtMgr" or the customized certificate store name from the previous step. |
    | Container | Optional container to associate certificate store with. |
    | Client Machine | Not used |
@@ -312,8 +291,6 @@ the Keyfactor Command Portal
    | IncludeChain | Determines whether to include the certificate chain when adding a certificate as a secret. |
 
 </details>
-
-
 
 #### Using kfutil CLI
 
@@ -347,7 +324,6 @@ the Keyfactor Command Portal
 
 </details>
 
-
 #### PAM Provider Eligible Fields
 <details><summary>Attributes eligible for retrieval by a PAM Provider on the Universal Orchestrator</summary>
 
@@ -355,17 +331,14 @@ If a PAM provider was installed _on the Universal Orchestrator_ in the [Installa
 
    | Attribute | Description |
    | --------- | ----------- |
-   | StorePassword | Password used to encrypt the private key of ALL certificate secrets.  Please see [Certificate Encryption Details](#certificate-encryption-details) for more information |
+   | StorePassword | Password to use when reading/writing to store |
 
 Please refer to the **Universal Orchestrator (remote)** usage section ([PAM providers on the Keyfactor Integration Catalog](https://keyfactor.github.io/integrations-catalog/content/pam)) for your selected PAM provider for instructions on how to load attributes orchestrator-side.
 > Any secret can be rendered by a PAM provider _installed on the Keyfactor Command server_. The above parameters are specific to attributes that can be fetched by an installed PAM provider running on the Universal Orchestrator server itself.
 
 </details>
 
-
 > The content in this section can be supplemented by the [official Command documentation](https://software.keyfactor.com/Core-OnPrem/Current/Content/ReferenceGuide/Certificate%20Stores.htm?Highlight=certificate%20store).
-
-
 
 
 ## Certificate Encryption Details
@@ -421,7 +394,6 @@ This extension supports supplying TTL (Time To Live) and Destroy Version TTL val
 * A numeric value (in days) can be entered for either or both values specifying when a secret will be deleted (TTL Duration) and how many days after secret deletion each version will be destroyed (Version Destroy TTL Duration).
 * These values will be returned in Inventory jobs as well as modified when renewing/replacing a secret.
 * Blank values supplied during Management job when replacing a secret will not affect current values for the secret.
-
 
 ## License
 

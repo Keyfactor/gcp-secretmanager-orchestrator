@@ -42,28 +42,15 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 switch (config.OperationType)
                 {
                     case CertStoreOperationType.Add:
-                        string message = string.Empty;
+                        string tagsMessage = string.Empty;
+                        string labelsMessage = string.Empty;
 
                         bool entryExists = client.Exists(config.JobCertificate.Alias);
 
-                        bool hasLabelWarnings = PerformAdd(config, client, entryExists);
-                        if (hasLabelWarnings)
-                            message += " one or more labels could not be assigned";
+                        string warningMessages = PerformAdd(config, client, entryExists);
 
-                        bool hasTagWarnings = false;
-                        if (config.JobProperties.ContainsKey("tags") && config.JobProperties["tags"] != null && !entryExists)
-                        {
-                            hasTagWarnings = SetTags(config, client, out message);
-                            if (hasTagWarnings)
-                            {
-                                if (hasLabelWarnings)
-                                    message += "and";
-                                message += " one or more errors adding tags occurred";
-                            }
-                        }
-                        
-                        if (hasLabelWarnings || hasTagWarnings)
-                            return new JobResult() { Result = OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Certificate added successfully, but {message}: {message}" };
+                        if (!string.IsNullOrEmpty(warningMessages))
+                            return new JobResult() { Result = OrchestratorJobStatusJobResult.Warning, JobHistoryId = config.JobHistoryId, FailureMessage = $"Certificate added successfully, but {warningMessages}" };
                         
                         break;
                     case CertStoreOperationType.Remove:
@@ -81,11 +68,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return new JobResult() { Result = Keyfactor.Orchestrators.Common.Enums.OrchestratorJobStatusJobResult.Success, JobHistoryId = config.JobHistoryId };
         }
 
-        private bool PerformAdd(ManagementJobConfiguration config, GCPClient client, bool entryExists)
+        private string PerformAdd(ManagementJobConfiguration config, GCPClient client, bool entryExists)
         {
             Logger.MethodEntry(LogLevel.Debug);
 
-            bool rtnWithWarnings = false;
+            string rtnWarnings = string.Empty;
 
             string alias = config.JobCertificate.Alias;
             string newPassword = string.Empty;
@@ -110,6 +97,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             {
                 string secret = CertificateFormatter.ConvertCertificateEntryToSecret(config.JobCertificate.Contents, config.JobCertificate.PrivateKeyPassword, IncludeChain, newPassword);
                 string labels = (config.JobProperties.ContainsKey("labels") && config.JobProperties["labels"] != null) ? config.JobProperties["labels"].ToString() : null;
+                string tags = (config.JobProperties.ContainsKey("tags") && config.JobProperties["tags"] != null) ? config.JobProperties["tags"].ToString() : null;
 
                 int ttlDuration = 0;
                 TimeSpan? ttlDurationTS = null;
@@ -142,64 +130,19 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     }
                 }
 
-                client.AddSecret(alias, secret, entryExists, labels, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS);
+                rtnWarnings = client.AddSecret(alias, secret, entryExists, labels, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS, tags);
                 if (!string.IsNullOrEmpty(newPassword) && string.IsNullOrEmpty(StorePassword))
                 {
                     bool passwordEntryExists = client.Exists(alias + PasswordSecretSuffix);
-                    rtnWithWarnings = client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists);
+                    client.AddSecret(alias + PasswordSecretSuffix, newPassword, passwordEntryExists, null, ReplicationRegions, ttlDurationTS, versionDestroyTtlDurationTS, tags);
                 }
             }
-            catch { throw; }
             finally
             {
                 Logger.MethodExit(LogLevel.Debug);
             }
 
-            return rtnWithWarnings;
-        }
-        private bool SetTags(ManagementJobConfiguration config, GCPClient client, out string message)
-        {
-            Logger.MethodEntry(LogLevel.Debug);
-
-            bool hasWarnings = false;
-            message = string.Empty;
-
-            List<TagKeyValue> availableTagKeyValues = client.GetTagKeysValues();
-
-            List<(string,string)> newTagKeyValues = config.JobProperties["tags"].ToString()
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(pair => pair.Split(':', 2))
-                .Where(parts => parts.Length == 2)
-                .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
-                .ToList();
-
-
-            foreach ((string,string) tagValue in newTagKeyValues)
-            {
-                if (availableTagKeyValues.Exists(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2)))
-                {
-                    TagKeyValue keyValue = availableTagKeyValues.First(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2));
-
-                    try
-                    {
-                        client.SetSecretTag(config.JobCertificate.Alias, keyValue.TagValues.Find(t => t.ShortName == tagValue.Item2).Name);
-                    }
-                    catch (Exception ex)
-                    {
-                        hasWarnings = true;
-                        message += $"Error attempting to add tag key/value pair {tagValue.Item1}/{tagValue.Item2}: {ex.Message}";
-                    }
-                }
-                else
-                {
-                    hasWarnings = true;
-                    message += $"Tag key/value pair {tagValue.Item1}/{tagValue.Item2} not set up as a valid organization level tag in GCP. Tag will not be assigned. ";
-                }
-            }
-
-            Logger.MethodExit(LogLevel.Debug);
-
-            return hasWarnings;
+            return rtnWarnings;
         }
     }
 }
