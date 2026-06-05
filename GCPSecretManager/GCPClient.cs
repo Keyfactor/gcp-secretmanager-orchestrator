@@ -416,17 +416,48 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValue;
         }
 
-        public void SetSecretTag(string alias, string tagValue)
+        public bool SecretTagBindingExists(string secretResource, string tagValue)
         {
             _logger.MethodEntry(LogLevel.Debug);
+            bool rtnValue = false;
+
+            ListTagBindingsRequest request = new ListTagBindingsRequest()
+            {
+                
+                ParentAsResourceName = new UnparsedResourceName($"//secretmanager.googleapis.com/{secretResource}")
+            };
 
             try
             {
+                ListTagBindingsResponse response = TagBindingsClient.ListTagBindings(request).AsRawResponses().FirstOrDefault();
+                rtnValue = response.TagBindings.Where(p => p.TagValue == tagValue).Any();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return rtnValue;
+        }
+
+        public void SetSecretTag(string alias, string tagValue)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+            string secretResource = string.Empty;
+
+            try
+            {
+                secretResource = GetSecret(alias).Name;
                 Operation<TagBinding, CreateTagBindingMetadata> tagOperation = TagBindingsClient.CreateTagBinding(new CreateTagBindingRequest()
                 {
                     TagBinding = new TagBinding()
                     {
-                        Parent = $"{ResourcePrefix}{GetSecret(alias).Name}",
+                        Parent = ResourcePrefix + secretResource,
                         TagValue = tagValue
                     }
                 });
@@ -436,6 +467,21 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 {
                     throw (tagOperation.Exception);
                 };
+
+                int tryNumber = 1;
+
+                while (tryNumber < 10)
+                {
+                    System.Threading.Thread.Sleep(10000);
+                    _logger.LogDebug($"Checking whether tag {tagValue} has propogated to secret {alias}.  Try number {tryNumber.ToString()} of 10.");
+                    if (SecretTagBindingExists(secretResource, tagValue)) break;
+                    tryNumber++;
+                }
+
+                if (tryNumber == 10)
+                {
+                    throw new Exception($"Tag binding {tagValue} not propogated after 10 attempts to find it.  Tag may not have been applied.");
+                }
             }
             catch (Exception ex)
             {
