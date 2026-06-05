@@ -472,7 +472,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 
                 while (tryNumber < 10)
                 {
-                    System.Threading.Thread.Sleep(10000);
+                    System.Threading.Thread.Sleep(10000); 
                     _logger.LogDebug($"Checking whether tag {tagValue} has propogated to secret {alias}.  Try number {tryNumber.ToString()} of 10.");
                     if (SecretTagBindingExists(secretResource, tagValue)) break;
                     tryNumber++;
