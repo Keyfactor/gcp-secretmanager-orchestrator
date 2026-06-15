@@ -1,3 +1,7 @@
+v1.3.0
+- Bug Fix: Certificates with encrypted private keys utilizing user managed replication were having their passwords stored separately but in the global scope instead of the replicated regions where the certificate was stored.
+- Re-ordered adding tags to before adding secret versions to make sure any auth rules based on tags are supported.
+
 v1.2.0
 - Added support for labels
 - Added support for setting ttl duration

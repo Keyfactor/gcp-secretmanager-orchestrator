@@ -2,6 +2,7 @@
 using Google.Api.Gax.ResourceNames;
 using Google.Cloud.ResourceManager.V3;
 using Google.Cloud.SecretManager.V1;
+using Google.LongRunning;
 using Google.Protobuf.Collections;
 using Google.Protobuf.WellKnownTypes;
 using Keyfactor.Logging;
@@ -9,8 +10,6 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata;
 
 namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
 {
@@ -159,11 +158,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
-        public bool AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null)
+        public string AddSecret(string alias, string secretContent, bool entryExists, string labels = null, List<ReplicationRegion> replicationRegions = null, TimeSpan? ttlDuration = null, TimeSpan? versionDestroyTtlDuration = null, string tags = null)
         {
             _logger.MethodEntry(LogLevel.Debug);
 
-            bool rtnWarning = false;
+            string rtnWarnings = string.Empty;
 
             try
             {
@@ -179,8 +178,6 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                     secretRequest.SecretId = alias;
 
                     secretRequest.Secret = new Secret();
-                    if (ttlDuration.HasValue) secretRequest.Secret.Ttl = Duration.FromTimeSpan(ttlDuration.Value);
-                    if (versionDestroyTtlDuration.HasValue) secretRequest.Secret.VersionDestroyTtl = Duration.FromTimeSpan(versionDestroyTtlDuration.Value);
                     if (replicationRegions == null || replicationRegions.Count == 0)
                     {
                         secretRequest.Secret.Replication = new Replication { Automatic = new Replication.Types.Automatic() };
@@ -200,14 +197,23 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         }
                     }
 
-                    AssignLabels(labels, secretRequest.Secret.Labels);
-
                     Secret secret = Client.CreateSecret(secretRequest);
+                }
+
+                string tagsMessage = string.Empty;
+                if (!string.IsNullOrEmpty(tags) && !entryExists)
+                {
+                    tagsMessage = SetTags(alias, tags);
                 }
 
                 //create new version
                 ClearSecretFields(alias, labels != null, ttlDuration.HasValue, versionDestroyTtlDuration.HasValue);
-                UpdateSecretFields(alias, labels, ttlDuration, versionDestroyTtlDuration);
+                string secretFieldsMessage = UpdateSecretFields(alias, labels, ttlDuration, versionDestroyTtlDuration);
+
+                if (!string.IsNullOrEmpty(tagsMessage) || !string.IsNullOrEmpty(secretFieldsMessage))
+                {
+                    rtnWarnings = $" one or more errors occurred adding tags, labels, ttl duration, and/or ttl version destroy duration {secretFieldsMessage}, {tagsMessage}.";
+                }
 
                 AddSecretVersionRequest secretVersionRequest = new AddSecretVersionRequest();
                 secretVersionRequest.ParentAsSecretName = secretName;
@@ -225,7 +231,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                 _logger.MethodExit(LogLevel.Debug);
             }
 
-            return rtnWarning;
+            return rtnWarnings;
         }
 
         public void DeleteCertificate(string name)
@@ -410,20 +416,72 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             return rtnValue;
         }
 
-        public void SetSecretTag(string alias, string tagValue)
+        public bool SecretTagBindingExists(string secretResource, string tagValue)
         {
             _logger.MethodEntry(LogLevel.Debug);
+            bool rtnValue = false;
+
+            ListTagBindingsRequest request = new ListTagBindingsRequest()
+            {
+                
+                ParentAsResourceName = new UnparsedResourceName($"//secretmanager.googleapis.com/{secretResource}")
+            };
 
             try
             {
-                TagBindingsClient.CreateTagBinding(new CreateTagBindingRequest()
+                ListTagBindingsResponse response = TagBindingsClient.ListTagBindings(request).AsRawResponses().FirstOrDefault();
+                rtnValue = response.TagBindings.Where(p => p.TagValue == tagValue).Any();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                throw;
+            }
+            finally
+            {
+                _logger.MethodExit(LogLevel.Debug);
+            }
+
+            return rtnValue;
+        }
+
+        public void SetSecretTag(string alias, string tagValue)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+            string secretResource = string.Empty;
+
+            try
+            {
+                secretResource = GetSecret(alias).Name;
+                Operation<TagBinding, CreateTagBindingMetadata> tagOperation = TagBindingsClient.CreateTagBinding(new CreateTagBindingRequest()
                 {
                     TagBinding = new TagBinding()
                     {
-                        Parent = $"{ResourcePrefix}{GetSecret(alias).Name}",
+                        Parent = ResourcePrefix + secretResource,
                         TagValue = tagValue
                     }
                 });
+
+                tagOperation = tagOperation.PollUntilCompleted();
+                if (tagOperation.IsFaulted)
+                {
+                    throw (tagOperation.Exception);
+                };
+
+                int tryNumber = 1;
+
+                while (tryNumber < 10)
+                {
+                    System.Threading.Thread.Sleep(10000); 
+                    _logger.LogDebug($"Checking whether tag {tagValue} has propogated to secret {alias}.  Try number {tryNumber.ToString()} of 10.");
+                    if (SecretTagBindingExists(secretResource, tagValue)) break;
+                    tryNumber++;
+                }
+
+                if (tryNumber == 10)
+                {
+                    throw new Exception($"Tag binding {tagValue} not propogated after 10 attempts to find it.  Tag may not have been applied.");
+                }
             }
             catch (Exception ex)
             {
@@ -476,9 +534,11 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             }
         }
 
-        public void UpdateSecretFields(string alias, string labels, TimeSpan? ttlDuration, TimeSpan? versionDestroyTtlDuration)
+        public string UpdateSecretFields(string alias, string labels, TimeSpan? ttlDuration, TimeSpan? versionDestroyTtlDuration)
         {
             _logger.MethodEntry(LogLevel.Debug);
+
+            string rtnMessages = string.Empty;
 
             Secret secret = new Secret { SecretName = new SecretName(ProjectId, alias) };
 
@@ -508,12 +568,55 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             catch (Exception ex)
             {
                 _logger.LogError(ex.Message);
-                throw;
+                rtnMessages = ex.Message;
             }
             finally
             {
                 _logger.MethodExit(LogLevel.Debug);
             }
+
+            return rtnMessages;
+        }
+
+        private string SetTags(string alias, string tags)
+        {
+            _logger.MethodEntry(LogLevel.Debug);
+
+            string rtnMessages = string.Empty;
+
+            List<TagKeyValue> availableTagKeyValues = GetTagKeysValues();
+
+            List<(string, string)> newTagKeyValues = tags
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(pair => pair.Split(':', 2))
+                .Where(parts => parts.Length == 2)
+                .Select(parts => (Key: parts[0].Trim(), Value: parts[1].Trim()))
+                .ToList();
+
+            foreach ((string, string) tagValue in newTagKeyValues)
+            {
+                if (availableTagKeyValues.Exists(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2)))
+                {
+                    TagKeyValue keyValue = availableTagKeyValues.First(t => t.TagKey.ShortName == tagValue.Item1 && t.TagValues.Exists(t2 => t2.ShortName == tagValue.Item2));
+
+                    try
+                    {
+                        SetSecretTag(alias, keyValue.TagValues.Find(t => t.ShortName == tagValue.Item2).Name);
+                    }
+                    catch (Exception ex)
+                    {
+                        rtnMessages += $"Error attempting to add tag key/value pair {tagValue.Item1}/{tagValue.Item2}: {ex.Message}";
+                    }
+                }
+                else
+                {
+                    rtnMessages += $"Tag key/value pair {tagValue.Item1}/{tagValue.Item2} not set up as a valid organization level tag in GCP. Tag will not be assigned. ";
+                }
+            }
+
+            _logger.MethodExit(LogLevel.Debug);
+
+            return rtnMessages;
         }
 
         private string GetOrganizationFromProject()
