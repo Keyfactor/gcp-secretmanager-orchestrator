@@ -1,3 +1,6 @@
+v1.4.0
+- When labels are supplied and a Password Secret Location Suffix is entered for the certificate store, apply labels to both the certificate and the password secrets
+
 v1.3.0
 - Bug Fix: Certificates with encrypted private keys utilizing user managed replication were having their passwords stored separately but in the global scope instead of the replicated regions where the certificate was stored.
 - Re-ordered adding tags to before adding secret versions to make sure any auth rules based on tags are supported.
