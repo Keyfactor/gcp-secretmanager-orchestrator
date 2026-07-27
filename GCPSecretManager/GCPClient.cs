@@ -89,12 +89,16 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
             
             try
             {
+                Secret secret = GetSecret(name.Substring(name.LastIndexOf("/") + 1));
+                SecretName secretName = SecretName.Parse(secret.Name);
+                SecretVersion secretVersion = Client.GetSecretVersion(new SecretVersionName(ProjectId, secretName.SecretId, "latest"));
+
                 AccessSecretVersionResponse version = Client.AccessSecretVersion(new AccessSecretVersionRequest() { Name = name + "/versions/latest" });
                 rtnValue.Secret = version.Payload.Data.ToStringUtf8();
                 rtnValue.Labels = string.Empty;
 
-                Secret secret = GetSecret(name.Substring(name.LastIndexOf("/")+1));
-                rtnValue.TTLDuration = secret.Ttl;
+                rtnValue.CreationDate = secretVersion.CreateTime.ToDateTime();
+                rtnValue.ExpirationDate = secret.ExpireTime?.ToDateTime();
                 rtnValue.VersionDestroyTTLDuration = secret.VersionDestroyTtl;
 
 
