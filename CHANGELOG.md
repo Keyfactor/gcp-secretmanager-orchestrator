@@ -1,3 +1,6 @@
+v1.5.0
+- Return Secret duration (ttlduration) on Inventory by calculating this value as version create date - secret expiration date (in days).  If the secret expiration date is null, ttlduration will be returned as null.
+
 v1.4.0
 - When labels are supplied and a Password Secret Location Suffix is entered for the certificate store, apply labels to both the certificate and the password secrets
 

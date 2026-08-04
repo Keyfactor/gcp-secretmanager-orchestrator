@@ -74,7 +74,7 @@ namespace Keyfactor.Extensions.Orchestrator.GCPSecretManager
                         { "tags", secretTags },
                         { "labels", certificateEntry.Labels },
                         { "replicationRegions", certificateEntry.ReplicationRegions },
-                        { "ttlDuration", certificateEntry.TTLDuration?.ToTimeSpan().Days.ToString() },
+                        { "ttlDuration", certificateEntry.ExpirationDate.HasValue ? ((int)Math.Ceiling((certificateEntry.ExpirationDate.Value - certificateEntry.CreationDate).TotalDays)).ToString() : null },
                         { "versionDestroyTtlDuration", certificateEntry.VersionDestroyTTLDuration?.ToTimeSpan().Days.ToString() }
                     };
 
